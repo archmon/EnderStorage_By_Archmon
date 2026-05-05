@@ -15,7 +15,7 @@ public class ExampleCommand extends CommandBase {
     private final String pluginVersion;
 
     public ExampleCommand(String pluginName, String pluginVersion) {
-        super("test", "Prints a test message from the " + pluginName + " plugin.");
+        super("test", "Prints a test message from the EnderStorage_By_Archmon Mod.");
         this.setPermissionGroup(GameMode.Adventure); // Allows the command to be used by anyone, not just OP
         this.pluginName = pluginName;
         this.pluginVersion = pluginVersion;
@@ -23,6 +23,6 @@ public class ExampleCommand extends CommandBase {
 
     @Override
     protected void executeSync(@Nonnull CommandContext ctx) {
-        ctx.sendMessage(Message.raw("Hello from the " + pluginName + " v" + pluginVersion + " plugin!"));
+        ctx.sendMessage(Message.raw("Hello from the EnderStorage_By_Archmon v" + pluginVersion + " Mod!"));
     }
 }
