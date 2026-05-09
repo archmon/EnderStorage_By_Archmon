@@ -3,7 +3,7 @@ plugins {
     id("hytale-mod") version "0.+"
 }
 
-group = "com.example"
+group = "me.archmon"
 version = "0.0.2"
 val javaVersion = 25
 

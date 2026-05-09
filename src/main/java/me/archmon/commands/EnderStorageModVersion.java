@@ -1,28 +1,23 @@
-package com.example.exampleplugin;
+package me.archmon.commands;
 
 import com.hypixel.hytale.protocol.GameMode;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.command.system.basecommands.CommandBase;
+import org.jspecify.annotations.NonNull;
 
-import javax.annotation.Nonnull;
+public class EnderStorageModVersion extends CommandBase {
 
-/**
- * This is an example command that will simply print the name of the plugin in chat when used.
- */
-public class ExampleCommand extends CommandBase {
-    private final String pluginName;
     private final String pluginVersion;
 
-    public ExampleCommand(String pluginName, String pluginVersion) {
-        super("test", "Prints a test message from the EnderStorage_By_Archmon Mod.");
+    public EnderStorageModVersion(String pluginVersion) {
+        super("EnderStorageVersion","Version number of the EnderStorage Mod by Archmon");
         this.setPermissionGroup(GameMode.Adventure); // Allows the command to be used by anyone, not just OP
-        this.pluginName = pluginName;
         this.pluginVersion = pluginVersion;
     }
 
     @Override
-    protected void executeSync(@Nonnull CommandContext ctx) {
+    protected void executeSync(@NonNull CommandContext ctx) {
         ctx.sendMessage(Message.raw("Hello from the EnderStorage_By_Archmon v" + pluginVersion + " Mod!"));
     }
 }
