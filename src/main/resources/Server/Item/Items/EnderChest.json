@@ -1,13 +1,13 @@
 {
   "TranslationProperties": {
-    "Name": "server.items.EnderSafe.name"
+    "Name": "server.items.EnderChest.name"
   },
   "PlayerAnimationsId": "Block",
   "Categories": [
     "Furniture.Containers"
   ],
   "Set": "Furniture_Adventure",
-  "Icon": "Icons/ItemsGenerated/EnderSafe.png",
+  "Icon": "Icons/ItemsGenerated/EnderChest.png",
   "Recipe": {
     "KnowledgeRequired": false,
     "Input": [
@@ -38,7 +38,7 @@
   "BlockType": {
     "BlockParticleSetId": "Wood",
     "BlockSoundSetId": "Wood",
-    "CustomModel": "Blocks/Chest_Ender_Personal.blockymodel",
+    "CustomModel": "Blocks/Chest_Ender_Storage.blockymodel",
     "CustomModelTexture": [
       {
         "Texture": "BlockTextures/Chest_Ender_Texture.png",
