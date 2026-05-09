@@ -1,2 +1,4 @@
 items.EnderSafe.name=Ender Safe
+items.EnderSafe.description=A safe where your items can be found regardless of the location of the safe.
 items.EnderChest.name=Ender Chest
+items.EnderChest.description=A chest that matches the inventory of other chests with the same color code.

@@ -1,6 +1,7 @@
 {
   "TranslationProperties": {
-    "Name": "server.items.EnderChest.name"
+    "Name": "server.items.EnderChest.name",
+    "Description": "server.items.EnderChest.description"
   },
   "PlayerAnimationsId": "Block",
   "Categories": [

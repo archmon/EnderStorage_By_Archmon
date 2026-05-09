@@ -1,6 +1,7 @@
 {
   "TranslationProperties": {
-    "Name": "server.items.EnderSafe.name"
+    "Name": "server.items.EnderSafe.name",
+    "Description": "server.items.EnderSafe.description"
   },
   "PlayerAnimationsId": "Block",
   "Categories": [
