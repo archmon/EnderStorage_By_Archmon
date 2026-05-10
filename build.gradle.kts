@@ -17,6 +17,8 @@ repositories {
 dependencies {
     compileOnly(libs.jetbrains.annotations)
     compileOnly(libs.jspecify)
+    //standard SQLite JDBC driver
+    implementation("org.xerial:sqlite-jdbc:3.45.3.0")
 }
 
 hytale {
