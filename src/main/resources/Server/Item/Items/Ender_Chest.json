@@ -1,14 +1,14 @@
 {
   "TranslationProperties": {
-    "Name": "server.items.EnderChest.name",
-    "Description": "server.items.EnderChest.description"
+    "Name": "server.items.Ender_Chest.name",
+    "Description": "server.items.Ender_Chest.description"
   },
   "PlayerAnimationsId": "Block",
   "Categories": [
     "Furniture.Containers"
   ],
   "Set": "Furniture_Adventure",
-  "Icon": "Icons/ItemsGenerated/EnderChest.png",
+  "Icon": "Icons/ItemsGenerated/Ender_Chest.png",
   "Recipe": {
     "KnowledgeRequired": false,
     "Input": [

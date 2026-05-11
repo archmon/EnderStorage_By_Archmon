@@ -19,6 +19,6 @@ public class EnderStoragePlugin extends JavaPlugin {
         commandRegistry.registerCommand(new EnderStorageModVersion(this.getManifest().getVersion().toString()));
 
         //TutorialBlockBreakSystem by kaupenjoe
-        this.getEntityStoreRegistry().registerSystem(new TutorialBlockBreakSystem());
+        //this.getEntityStoreRegistry().registerSystem(new TutorialBlockBreakSystem()); //Do not use, only reference to future(removed dependency from manifest.json
     }
 }
