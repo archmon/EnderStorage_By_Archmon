@@ -4,7 +4,10 @@ from what Kaupenjoe released.
 
 Disclosure:
 This is my first mod and very much a work in progress. This mod is meant to bring the
-EnderStorage mod from Minecraft to Hytale. 
-No Ai was used in this mod's creation(not going to pay to have something code for me). 
-However I did look and try to analyze how
-different mods work and followed tutorials by both Kaupenjoe and Ali. 
+EnderStorage mod from Minecraft to Hytale. I used the videos from Kaupenjoe and Ali
+in order to get the start of the mod and the Ai from Google.com search was used in 
+this mod's creation. I also did look at how the
+original Enderchest mod by 01Kvothe10 was constructed, but typed my own implementation of 
+what he did. I then tried to develop that base further to not only implement the enderSafe,
+but my version of the EnderChest.
+
