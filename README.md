@@ -1,4 +1,4 @@
-# Hytale Plugin 
+# Hytale version of EnderStorage by Archmon
 Originally the template for Hytale java plugins modified by Archmon 
 from what Kaupenjoe released.
 

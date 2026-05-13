@@ -1,11 +1,13 @@
+//This class was heavily influenced by the DatabaseHandler class of the original EnderChest mod by 01Kvothe10
+
+
 package me.archmon.systems;
 
 import com.google.gson.JsonObject;
 
 import java.io.File;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.sql.*;
+import java.util.UUID;
 
 public class DatabaseHandler {
     private Connection connection;
@@ -71,7 +73,7 @@ public class DatabaseHandler {
                 if (jsonObject.has("port")){
                     port = jsonObject.get("port").getAsInt();
                 } else {
-                    port = 5432;
+                    port = 5433;
                 }
 
                 if (jsonObject.has("name")) {
@@ -112,9 +114,81 @@ public class DatabaseHandler {
 
     private void createTables() throws SQLException {
 
+        String sqlStatement;
+        if ("postgresql".equals(this.dbType)){
+            sqlStatement = "CREATE TABLE IF NOT EXISTS ender_chests (uuid VARCHAR(36) PRIMARY KEY, inventory_data TEXT NOT NULL, last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
+        }  else {
+            sqlStatement = "CREATE TABLE IF NOT EXISTS ender_chests (uuid TEXT PRIMARY KEY, inventory_data TEXT NOT NULL, last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
+        }
+
+        try (Statement tableCreation = this.connection.createStatement()){
+            tableCreation.execute(sqlStatement);
+        }
+
     }
 
+    public synchronized String getInventory(UUID uuid) throws SQLException {
 
+        if (this.connection == null) {
+            return null;
 
+        } else {
 
+            String sqlString = "SELECT inventory_data FROM ender_chests WHERE uuid = ?;";
+
+            try (PreparedStatement sqlStatement = this.connection.prepareStatement(sqlString)) {
+                sqlStatement.setString(1, uuid.toString());//if wondering why 1, look at setString
+
+                try (ResultSet resultSet = sqlStatement.executeQuery()) {
+                    if (resultSet.next()) {
+                        return resultSet.getString("inventory_data");
+                    }
+                }
+
+            }
+
+            return null;
+
+        }
+    }
+
+    public synchronized void saveInventory(UUID uuid, String Inventory_Data_String_Json) throws SQLException {
+
+        if (this.connection == null) {
+            throw new SQLException(("Not connected to database"));
+
+        } else {
+
+            String sqlStatement;
+            if ("postgresql".equals(this.dbType)) {
+                sqlStatement = "INSERT INTO ender_chests (uuid, inventory_data, last_updated) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT (uuid) DO UPDATE SET inventory_data = EXCLUDED.inventory_data, last_updated = CURRENT_TIMESTAMP;";
+            } else {
+                sqlStatement = "INSERT INTO ender_chests (uuid, inventory_data, last_updated) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(uuid) DO UPDATE SET inventory_data = excluded.inventory_data, last_updated = CURRENT_TIMESTAMP;";
+            }
+
+            try (PreparedStatement preparedSQLStatement = this.connection.prepareStatement(sqlStatement)){
+                preparedSQLStatement.setString(1, uuid.toString());
+                preparedSQLStatement.setString(2, Inventory_Data_String_Json);
+                preparedSQLStatement.executeUpdate();
+            }
+        }
+    }
+
+    public synchronized void close() {
+        try {
+            if (this.connection != null && !this.connection.isClosed()) {
+                this.connection.close();
+            }
+        } catch (SQLException errorClose) {
+            errorClose.printStackTrace();
+        }
+    }
+
+    public boolean isConnected() {
+        try {
+            return this.connection != null && !this.connection.isClosed();
+        } catch (SQLException connectionError) {
+            return false;
+        }
+    }
 }
