@@ -1,13 +1,17 @@
 package me.archmon;
 
+import com.google.gson.JsonObject;
 import com.hypixel.hytale.server.core.command.system.CommandRegistry;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import me.archmon.commands.EnderStorageModVersion;
 import me.archmon.event.TutorialBlockBreakSystem;
+import me.kvothe.enderchest.EnderChestMod;
 import org.jspecify.annotations.NonNull;
 
 public class EnderStoragePlugin extends JavaPlugin {
+
+    private static EnderStoragePlugin instance;
 
     public EnderStoragePlugin(@NonNull JavaPluginInit init) {
         super(init);
@@ -20,5 +24,18 @@ public class EnderStoragePlugin extends JavaPlugin {
 
         //TutorialBlockBreakSystem by kaupenjoe
         //this.getEntityStoreRegistry().registerSystem(new TutorialBlockBreakSystem()); //Do not use, only reference to future(removed dependency from manifest.json
+
+
+    }
+
+    /*The following was heavily influenced by the EnderChestMod class from original EnderChest mod by 01Kvothe10*/
+    public static void onFirstTick() {
+        if (instance != null) {
+            instance.handleCraftingConfig();
+        }
+    }
+
+    private void handleCraftingConfig() {
+
     }
 }
