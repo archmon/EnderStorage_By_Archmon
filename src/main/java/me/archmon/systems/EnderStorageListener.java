@@ -7,12 +7,11 @@ import java.util.function.Consumer;
 
 //note to self, PlayerInteractEvent is Depreciated
 public class EnderStorageListener implements Consumer<PlayerInteractEvent> {
-    //private final EnderStorageManager manager;
+    private final EnderStorageManager manager;
 
-    /*
-    public EnderChestListener(EnderChestManager listener) {
+    public EnderStorageListener(EnderStorageManager listener) {
         this.manager = listener;
-    }  Reintroduce after writing manager*/
+    }
 
     public void accept(PlayerInteractEvent event) {
     }
