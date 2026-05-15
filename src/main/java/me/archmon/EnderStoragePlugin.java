@@ -1,12 +1,11 @@
+//This class was heavily influenced by the EnderChestMod class of the original EnderChest mod by 01Kvothe10
+
 package me.archmon;
 
-import com.google.gson.JsonObject;
 import com.hypixel.hytale.server.core.command.system.CommandRegistry;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import me.archmon.commands.EnderStorageModVersion;
-import me.archmon.event.TutorialBlockBreakSystem;
-import me.kvothe.enderchest.EnderChestMod;
 import org.jspecify.annotations.NonNull;
 
 public class EnderStoragePlugin extends JavaPlugin {
