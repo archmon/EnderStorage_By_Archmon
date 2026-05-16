@@ -1,0 +1,21 @@
+package me.archmon.commands;
+
+import com.hypixel.hytale.protocol.GameMode;
+import com.hypixel.hytale.server.core.Message;
+import com.hypixel.hytale.server.core.command.system.CommandContext;
+import com.hypixel.hytale.server.core.command.system.basecommands.CommandBase;
+import org.jspecify.annotations.NonNull;
+
+public class EnderStorageBugReport extends CommandBase {
+
+    public EnderStorageBugReport() {
+        super("EnderStorageBugReport", "If there is a bug in the EnderStorage Mod by Archmon, here is the website to report it to.");
+        this.setPermissionGroup(GameMode.Adventure); // Allows the command to be used by anyone, not just OP
+    }
+
+    @Override
+    protected void executeSync(@NonNull CommandContext commandContext) {
+        String website = "https://github.com/archmon/EnderStorage_By_Archmon/issues";
+        commandContext.sendMessage(Message.raw("Bug reports for the EnderStorage Mod by Archmon can be reported here :" + website));
+    }
+}

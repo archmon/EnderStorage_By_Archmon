@@ -9,6 +9,7 @@ import com.hypixel.hytale.server.core.command.system.CommandRegistry;
 import com.hypixel.hytale.server.core.event.events.player.PlayerInteractEvent;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
+import me.archmon.commands.EnderStorageBugReport;
 import me.archmon.commands.EnderStorageModVersion;
 import org.jspecify.annotations.NonNull;
 
@@ -45,6 +46,7 @@ public class EnderStoragePlugin extends JavaPlugin {
         //Initialize commands
         CommandRegistry commandRegistry = this.getCommandRegistry();
         commandRegistry.registerCommand(new EnderStorageModVersion(this.getManifest().getVersion().toString()));
+        commandRegistry.registerCommand(new EnderStorageBugReport());
 
         EnderStorageTickSystem enderStorageTickSystem = new EnderStorageTickSystem(manager);
         manager.setTickSystem(enderStorageTickSystem);
