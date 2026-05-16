@@ -11,7 +11,10 @@
   "Website": "${plugin_website}",
   "ServerVersion": "${server_version}",
   "Dependencies": {},
-  "OptionalDependencies": {},
+  "OptionalDependencies": {
+    "Hytale:EntityModule": "*",
+    "Hytale:BlockModule": "*"
+  },
   "DisabledByDefault": false,
   "IncludesAssetPack": true,
   "Main": "${plugin_main_entrypoint}"
