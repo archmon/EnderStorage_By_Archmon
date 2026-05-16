@@ -26,7 +26,7 @@ public class EnderStorageBreakSystem extends EntityEventSystem<EntityStore, Dama
     private final Set<Long> clearedBlocks = new HashSet<>();
     private static final float CLEAR_THRESHOLD = 0.5F;
 
-    protected EnderStorageBreakSystem(EnderStorageManager manager) {
+    public EnderStorageBreakSystem(EnderStorageManager manager) {
         super(DamageBlockEvent.class);
         this.manager = manager;
     }

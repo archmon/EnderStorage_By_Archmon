@@ -22,7 +22,7 @@ public class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, U
 
     private final EnderStorageManager manager;
 
-    protected EnderStorageUseBlockSystem(EnderStorageManager manager) {
+    public EnderStorageUseBlockSystem(EnderStorageManager manager) {
         super(UseBlockEvent.Pre.class);
         this.manager = manager;
     }
