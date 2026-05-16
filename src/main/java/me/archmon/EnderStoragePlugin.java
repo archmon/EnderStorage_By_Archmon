@@ -20,6 +20,7 @@ import java.lang.reflect.Method;
 import java.nio.file.*;
 import java.util.Map;
 
+@SuppressWarnings("deprecation")
 public class EnderStoragePlugin extends JavaPlugin {
 
     private static EnderStoragePlugin instance;
