@@ -35,7 +35,7 @@ import org.bson.BsonDocument;
 @SuppressWarnings("removal")
 public class EnderStorageManager {
 
-    private static final Path DATA_DIR = Paths.get("ender_storage_data"); //Is this used for anything?
+    private static final Path DATA_DIR = Paths.get("mods/archmon_EnderStorage/ender_storage_data"); //Is this used for anything?
     private final Map<UUID, ItemContainer> loadedContainers = new ConcurrentHashMap();
     private final Gson gson = (new GsonBuilder()).setPrettyPrinting().create();
     private final DatabaseHandler dbJsonObject;
