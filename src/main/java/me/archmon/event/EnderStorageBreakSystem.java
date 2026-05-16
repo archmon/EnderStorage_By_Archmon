@@ -1,6 +1,6 @@
 //This class was heavily influenced by the EnderChestBreakBlockSystem class of the original EnderChest mod by 01Kvothe10
 
-package me.archmon.systems;
+package me.archmon.event;
 
 import com.hypixel.hytale.component.ArchetypeChunk;
 import com.hypixel.hytale.component.CommandBuffer;
@@ -11,11 +11,14 @@ import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.ecs.DamageBlockEvent;
+import com.hypixel.hytale.server.core.event.events.player.PlayerInteractEvent;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import me.archmon.systems.EnderStorageManager;
 import org.jspecify.annotations.NonNull;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Consumer;
 
 public class EnderStorageBreakSystem extends EntityEventSystem<EntityStore, DamageBlockEvent> {
 
@@ -39,7 +42,7 @@ public class EnderStorageBreakSystem extends EntityEventSystem<EntityStore, Dama
 
         if (blockType != null) {
             String blockTypeIdString = blockType.getId();
-            if (blockTypeIdString != null && blockTypeIdString.contains("Ender_Safe")) {
+            if (blockTypeIdString != null && blockTypeIdString.contains("EnderSafe")) {
                 Vector3i blockPosition = damageBlockEvent.getTargetBlock();
                 if (blockPosition == null) { //consider removing cause it's always false
                     return;
@@ -68,4 +71,15 @@ public class EnderStorageBreakSystem extends EntityEventSystem<EntityStore, Dama
     }
 
 
+    //note to self, PlayerInteractEvent is Depreciated
+    public static class EnderStorageListener implements Consumer<PlayerInteractEvent> {
+        private final EnderStorageManager manager;
+
+        public EnderStorageListener(EnderStorageManager listener) {
+            this.manager = listener;
+        }
+
+        public void accept(PlayerInteractEvent event) {
+        }
+    }
 }

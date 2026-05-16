@@ -1,6 +1,6 @@
 //This class was heavily influenced by the EnderChestUseBlockSystem class of the original EnderChest mod by 01Kvothe10
 
-package me.archmon.systems;
+package me.archmon.event;
 
 import com.hypixel.hytale.component.ArchetypeChunk;
 import com.hypixel.hytale.component.CommandBuffer;
@@ -15,6 +15,7 @@ import com.hypixel.hytale.server.core.entity.InteractionContext;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.ecs.UseBlockEvent;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import me.archmon.systems.EnderStorageManager;
 import org.jspecify.annotations.NonNull;
 
 public class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, UseBlockEvent.Pre> {
@@ -45,7 +46,7 @@ public class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, U
                 interactedBlockName = "null";
             }
 
-            if (interactedBlockName != null && interactedBlockName.contains("Ender_Safe")) {//I think this is what intercepts the use of the chest
+            if (interactedBlockName != null && interactedBlockName.contains("EnderSafe")) {//I think this is what intercepts the use of the chest
                 Player player = null;
 
                 try {
