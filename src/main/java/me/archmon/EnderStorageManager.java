@@ -1,6 +1,6 @@
 //This class was heavily influenced by the EnderChestManager class of the original EnderChest mod by 01Kvothe10
 
-package me.archmon.systems;
+package me.archmon;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

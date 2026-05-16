@@ -6,15 +6,9 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.hypixel.hytale.server.core.command.system.CommandRegistry;
-import com.hypixel.hytale.server.core.event.events.player.PlayerInteractEvent;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import me.archmon.commands.EnderStorageModVersion;
-import me.archmon.event.EnderStorageBreakSystem;
-import me.archmon.event.EnderStorageListener;
-import me.archmon.event.EnderStorageUseBlockSystem;
-import me.archmon.systems.EnderStorageManager;
-import me.archmon.systems.EnderStorageTickSystem;
 import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
@@ -51,12 +45,13 @@ public class EnderStoragePlugin extends JavaPlugin {
         CommandRegistry commandRegistry = this.getCommandRegistry();
         commandRegistry.registerCommand(new EnderStorageModVersion(this.getManifest().getVersion().toString()));
 
-        EnderStorageTickSystem enderChestTickSystem = new EnderStorageTickSystem(manager);
-        manager.setTickSystem(enderChestTickSystem);
-        this.getEntityStoreRegistry().registerSystem(enderChestTickSystem);
-        this.getEntityStoreRegistry().registerSystem(new EnderStorageBreakSystem(manager));
-        this.getEntityStoreRegistry().registerSystem(new EnderStorageUseBlockSystem(manager));
-        this.getEventRegistry().registerGlobal(PlayerInteractEvent.class, new EnderStorageListener(manager));
+        EnderStorageTickSystem enderStorageTickSystem = new EnderStorageTickSystem(manager);
+        manager.setTickSystem(enderStorageTickSystem);
+        this.getEntityStoreRegistry().registerSystem(enderStorageTickSystem);
+        //this.getEntityStoreRegistry().registerSystem(new EnderStorageBreakSystem(manager));
+        //this.getEntityStoreRegistry().registerSystem(new EnderStorageUseBlockSystem(manager));
+        //warning PlayerInteractEvent is deprecated
+        //this.getEventRegistry().registerGlobal(PlayerInteractEvent.class, new EnderStorageListener(manager));
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             if (manager != null) {
                 manager.saveAll();
@@ -224,7 +219,7 @@ public class EnderStoragePlugin extends JavaPlugin {
         return Paths.get("mods/archmon_EnderStorage");
     }
 
-    public static EnderStorageManager getManager() {
+    /*public static EnderStorageManager getManager() {
         return manager;
-    }
+    }*/
 }

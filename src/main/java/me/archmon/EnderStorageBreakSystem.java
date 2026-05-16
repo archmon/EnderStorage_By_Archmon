@@ -1,6 +1,6 @@
 //This class was heavily influenced by the EnderChestBreakBlockSystem class of the original EnderChest mod by 01Kvothe10
 
-package me.archmon.event;
+package me.archmon;
 
 import com.hypixel.hytale.component.ArchetypeChunk;
 import com.hypixel.hytale.component.CommandBuffer;
@@ -13,7 +13,6 @@ import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.ecs.DamageBlockEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerInteractEvent;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import me.archmon.systems.EnderStorageManager;
 import org.jspecify.annotations.NonNull;
 
 import java.util.HashSet;

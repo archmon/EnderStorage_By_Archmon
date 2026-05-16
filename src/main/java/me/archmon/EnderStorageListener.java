@@ -1,9 +1,8 @@
 //This class was heavily influenced by the EnderChestListener class of the original EnderChest mod by 01Kvothe10
 
-package me.archmon.event;
+package me.archmon;
 
 import com.hypixel.hytale.server.core.event.events.player.PlayerInteractEvent;
-import me.archmon.systems.EnderStorageManager;
 
 import java.util.function.Consumer;
 

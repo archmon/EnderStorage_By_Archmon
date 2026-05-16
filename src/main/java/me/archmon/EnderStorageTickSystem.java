@@ -1,6 +1,6 @@
 //This class was heavily influenced by the EnderChestTickSystem class of the original EnderChest mod by 01Kvothe10
 
-package me.archmon.systems;
+package me.archmon;
 
 import com.hypixel.hytale.component.ArchetypeChunk;
 import com.hypixel.hytale.component.CommandBuffer;
@@ -10,8 +10,6 @@ import com.hypixel.hytale.component.system.tick.EntityTickingSystem;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import me.archmon.EnderStoragePlugin;
-import org.jspecify.annotations.NonNull;
 
 import java.io.PrintStream;
 import java.util.Iterator;
@@ -38,7 +36,7 @@ public class EnderStorageTickSystem extends EntityTickingSystem<EntityStore> {
     }
 
     @Override
-    public void tick(float v, int i, @NonNull ArchetypeChunk<EntityStore> archetypeChunk, @NonNull Store<EntityStore> store, @NonNull CommandBuffer<EntityStore> commandBuffer) {
+    public void tick(float v, int i, ArchetypeChunk<EntityStore> archetypeChunk, Store<EntityStore> store, CommandBuffer<EntityStore> commandBuffer) {
         if (!apiProbed) {
             apiProbed = true;
             EnderStoragePlugin.onFirstTick();
