@@ -50,7 +50,7 @@ public class DatabaseHandler {
                 String password;
                 String host;
                 int port;
-                String databaseFileName; //move this up to the constructor for use with both the Safe and chest.
+                String databaseFileName; //move this up to the constructor for use with both the Safe and chest. maybe.
 
                 if (jsonObject.has("user")){
                     user = jsonObject.get("user").getAsString();
@@ -79,7 +79,7 @@ public class DatabaseHandler {
                 if (jsonObject.has("name")) {
                     databaseFileName = jsonObject.get("name").getAsString();
                 } else {
-                    databaseFileName = "enderSafe";
+                    databaseFileName = "EnderStorage_By_Archmon";
                 }
 
                 try {
@@ -99,12 +99,12 @@ public class DatabaseHandler {
                     throw new SQLException("SQLite JDBC Diver not found! postgresql != sqlite! ", ErrorClassNotFound2);
                 }
 
-                File fileLocation = new File("mods/archmon_EnderSafe-Chest");
+                File fileLocation = new File("mods/archmon_EnderStorage");
                 if (!fileLocation.exists()){
                     fileLocation.mkdirs(); //if folder doesn't exist, make it.
                 }
 
-                String url2 = "jdbc:sqlite:mods/archmon_EnderSafe-Chest/endersafe.db"; //will have to rework this for use with both endersafe and enderchest
+                String url2 = "jdbc:sqlite:mods/archmon_EnderStorage/enderStorage_By_Archmon.db";
                 this.connection = DriverManager.getConnection(url2);
             }
 
@@ -116,9 +116,9 @@ public class DatabaseHandler {
 
         String sqlStatement;
         if ("postgresql".equals(this.dbType)){
-            sqlStatement = "CREATE TABLE IF NOT EXISTS ender_chests (uuid VARCHAR(36) PRIMARY KEY, inventory_data TEXT NOT NULL, last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
+            sqlStatement = "CREATE TABLE IF NOT EXISTS ender_safe (uuid VARCHAR(36) PRIMARY KEY, inventory_data TEXT NOT NULL, last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
         }  else {
-            sqlStatement = "CREATE TABLE IF NOT EXISTS ender_chests (uuid TEXT PRIMARY KEY, inventory_data TEXT NOT NULL, last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
+            sqlStatement = "CREATE TABLE IF NOT EXISTS ender_safe (uuid TEXT PRIMARY KEY, inventory_data TEXT NOT NULL, last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
         }
 
         try (Statement tableCreation = this.connection.createStatement()){
@@ -134,7 +134,7 @@ public class DatabaseHandler {
 
         } else {
 
-            String sqlString = "SELECT inventory_data FROM ender_chests WHERE uuid = ?;";
+            String sqlString = "SELECT inventory_data FROM ender_safe WHERE uuid = ?;";
 
             try (PreparedStatement sqlStatement = this.connection.prepareStatement(sqlString)) {
                 sqlStatement.setString(1, uuid.toString());//if wondering why 1, look at setString
@@ -161,9 +161,9 @@ public class DatabaseHandler {
 
             String sqlStatement;
             if ("postgresql".equals(this.dbType)) {
-                sqlStatement = "INSERT INTO ender_chests (uuid, inventory_data, last_updated) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT (uuid) DO UPDATE SET inventory_data = EXCLUDED.inventory_data, last_updated = CURRENT_TIMESTAMP;";
+                sqlStatement = "INSERT INTO ender_safe (uuid, inventory_data, last_updated) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT (uuid) DO UPDATE SET inventory_data = EXCLUDED.inventory_data, last_updated = CURRENT_TIMESTAMP;";
             } else {
-                sqlStatement = "INSERT INTO ender_chests (uuid, inventory_data, last_updated) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(uuid) DO UPDATE SET inventory_data = excluded.inventory_data, last_updated = CURRENT_TIMESTAMP;";
+                sqlStatement = "INSERT INTO ender_safe (uuid, inventory_data, last_updated) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(uuid) DO UPDATE SET inventory_data = excluded.inventory_data, last_updated = CURRENT_TIMESTAMP;";
             }
 
             try (PreparedStatement preparedSQLStatement = this.connection.prepareStatement(sqlStatement)){
