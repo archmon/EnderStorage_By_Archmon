@@ -14,8 +14,11 @@ import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.server.core.entity.InteractionContext;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.ecs.UseBlockEvent;
+import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.jspecify.annotations.NonNull;
+
+import java.lang.reflect.Method;
 
 import static java.lang.IO.println;
 
@@ -71,13 +74,62 @@ public class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, U
                 if (player != null) {
                     Vector3i targetedBlock = event.getTargetBlock();
                     BlockType blockType1 = event.getBlockType();
-                    byte rotationalIndex =0;
-                    this.manager.openEnderStorage(player, targetedBlock.x, targetedBlock.y, targetedBlock.z, rotationalIndex, blockType1);
+                    byte rotationalIndex = 0;
+
+                    this.manager.openEnderStorage(
+                            player,
+                            targetedBlock.x,
+                            targetedBlock.y,
+                            targetedBlock.z,
+                            rotationalIndex,
+                            blockType1
+                    );
+
+                    event.setCancelled(true);
+                }
+            }
+
+            if (interactedBlockName != null && interactedBlockName.contains("Ender_Chest")) {
+                Player player = null;
+                try {
+                    InteractionContext interactionContext = event.getContext();
+                    if (interactionContext != null) {
+                        Ref owningEntity = interactionContext.getOwningEntity();
+                        if (owningEntity != null) {
+                            player = store.getComponent(owningEntity, Player.getComponentType());
+                        }
+                    }
+                } catch (Exception err){
+                }
+
+                if (player == null) {
+                    Ref refStoreID = new Ref(store,id);
+                    player = (Player)store.getComponent(refStoreID, Player.getComponentType());
+                }
+
+                if (player != null) {
+                    Vector3i targetedBlock = event.getTargetBlock();
+                    BlockType blockType1 = event.getBlockType();
+                    byte rotationalIndex = 0;
+
+                    this.manager.openSharedEnderChest(
+                            player,
+                            targetedBlock.x,
+                            targetedBlock.y,
+                            targetedBlock.z,
+                            rotationalIndex,
+                            blockType1
+                    );
+
                     event.setCancelled(true);
                 }
             }
 
         }
+    }
+
+    private ItemContainer getWorldContainerAt(Vector3i targetedBlock) {
+        return null;
     }
 
 

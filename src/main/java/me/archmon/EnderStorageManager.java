@@ -36,10 +36,12 @@ import org.bson.BsonDocument;
 public class EnderStorageManager {
 
     private static final Path DATA_DIR = Paths.get("mods/archmon_EnderStorage/ender_storage_data"); //Is this used for anything?
+    private static final UUID DEFAULT_ENDER_CHEST_CHANNEL_UUID = UUID.nameUUIDFromBytes("EnderStorage:Ender_Chest:default".getBytes());
     private final Map<UUID, ItemContainer> loadedContainers = new ConcurrentHashMap();
+    private final Map<UUID, ItemContainer> loadedEnderChestContainers = new ConcurrentHashMap();
     private final Gson gson = (new GsonBuilder()).setPrettyPrinting().create();
     private final DatabaseHandler dbJsonObject;
-    private final Map<Long, ItemContainer> positionContainers = new ConcurrentHashMap();
+    private final Map<Long, ItemContainer> positionContainers = new ConcurrentHashMap<>();
     private EnderStorageTickSystem tickSystem;
 
     public EnderStorageManager(JsonObject dbConfigFile) {
@@ -78,7 +80,7 @@ public class EnderStorageManager {
             short numberOfSlotsInInventory =63;
 
             if (itemContainerCapacity != numberOfSlotsInInventory){//not sure if needed because size is not var
-                this.saveContainer(uuid, itemContainer);
+                            this.saveContainer(uuid, itemContainer);
                 this.loadedContainers.remove(uuid);
                 itemContainer = this.loadContainer(uuid);
                 this.loadedContainers.put(uuid, itemContainer);
@@ -104,6 +106,89 @@ public class EnderStorageManager {
         Ref playerReference = player.getReference();
         Store playerReferenceStore = playerReference.getStore();
         player.getPageManager().setPageWithWindows(playerReference, playerReferenceStore, Page.Bench, true, new Window[]{(Window)containerBlockWindow});
+    }
+
+    public ItemContainer getSharedEnderChestContainer() {
+        UUID channelUuid = DEFAULT_ENDER_CHEST_CHANNEL_UUID;
+
+        if (this.loadedEnderChestContainers.containsKey(channelUuid)) {
+            return this.loadedEnderChestContainers.get(channelUuid);
+        }
+
+        ItemContainer itemContainer = this.loadContainer(channelUuid);
+        this.loadedEnderChestContainers.put(channelUuid, itemContainer);
+
+        final ItemContainer finalItemContainer = itemContainer;
+        itemContainer.registerChangeEvent((event) -> this.saveContainer(channelUuid, finalItemContainer));
+
+        return itemContainer;
+    }
+
+    public void openSharedEnderChest(Player player, int posX, int posY, int posZ, int rotationIndex, BlockType blockType) {
+        UUID channelUuid = DEFAULT_ENDER_CHEST_CHANNEL_UUID;
+        ItemContainer itemContainer = this.getSharedEnderChestContainer();
+
+        Object containerBlockWindow;
+        if (blockType != null && itemContainer.getCapacity() == 63) {
+            containerBlockWindow = new ContainerBlockWindow(posX, posY, posZ, rotationIndex, blockType, itemContainer);
+        } else {
+            containerBlockWindow = new ContainerWindow(itemContainer);
+        }
+
+        final ItemContainer finalItemContainer = itemContainer;
+        ((Window)containerBlockWindow).registerCloseEvent((event) -> this.saveContainer(channelUuid, finalItemContainer));
+
+        Ref playerReference = player.getReference();
+        Store playerReferenceStore = playerReference.getStore();
+        player.getPageManager().setPageWithWindows(playerReference, playerReferenceStore, Page.Bench, true, new Window[]{(Window)containerBlockWindow});
+    }
+
+    public void importWorldEnderChestContainer(ItemContainer worldContainer) {
+        UUID channelUuid = DEFAULT_ENDER_CHEST_CHANNEL_UUID;
+        ItemContainer sharedContainer = this.getSharedEnderChestContainer();
+
+        if (!(worldContainer instanceof SimpleItemContainer worldSimpleContainer)) {
+            return;
+        }
+
+        if (!(sharedContainer instanceof SimpleItemContainer sharedSimpleContainer)) {
+            return;
+        }
+
+        boolean changed = false;
+        short worldCapacity = worldSimpleContainer.getCapacity();
+
+        for (short worldSlot = 0; worldSlot < worldCapacity; worldSlot++) {
+            ItemStack worldStack = worldSimpleContainer.getItemStack(worldSlot);
+
+            if (worldStack == null || worldStack.isEmpty()) {
+                continue;
+            }
+
+            if (this.moveStackIntoContainer(worldStack, sharedSimpleContainer)) {
+                worldSimpleContainer.setItemStackForSlot(worldSlot, null);
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            this.saveContainer(channelUuid, sharedSimpleContainer);
+        }
+    }
+
+    private boolean moveStackIntoContainer(ItemStack itemStack, SimpleItemContainer targetContainer) {
+        short targetCapacity = targetContainer.getCapacity();
+
+        for (short targetSlot = 0; targetSlot < targetCapacity; targetSlot++) {
+            ItemStack existingStack = targetContainer.getItemStack(targetSlot);
+
+            if (existingStack == null || existingStack.isEmpty()) {
+                targetContainer.setItemStackForSlot(targetSlot, itemStack);
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private ItemContainer loadContainer(UUID uuid){
@@ -152,6 +237,7 @@ public class EnderStorageManager {
                             }
 
                             itemStack = itemStack.withDurability(databaseSavedItem.durability);
+                            simpleItemContainer.setItemStackForSlot((short) inventorySlotKeyNumber, itemStack);
                         } catch (Exception err) {
                         }
                     }
@@ -204,6 +290,10 @@ public class EnderStorageManager {
 
     public void saveAll() {
         for (Map.Entry keyValue : this.loadedContainers.entrySet()) {
+            this.saveContainer((UUID)keyValue.getKey(), (ItemContainer)keyValue.getValue());
+        }
+
+        for (Map.Entry keyValue : this.loadedEnderChestContainers.entrySet()) {
             this.saveContainer((UUID)keyValue.getKey(), (ItemContainer)keyValue.getValue());
         }
 
