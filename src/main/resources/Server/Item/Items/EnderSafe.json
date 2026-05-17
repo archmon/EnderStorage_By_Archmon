@@ -10,6 +10,7 @@
   "Set": "Furniture_Adventure",
   "Icon": "Icons/ItemsGenerated/EnderSafe.png",
   "Recipe": {
+    "TimeSeconds": 5,
     "KnowledgeRequired": false,
     "Input": [
       {

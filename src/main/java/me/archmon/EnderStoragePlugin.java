@@ -183,11 +183,11 @@ public class EnderStoragePlugin extends JavaPlugin {
             Field registriesField = craftingPluginClass.getDeclaredField("registries");
             registriesField.setAccessible(true);
             Map craftingMap = (Map)registriesField.get(craftingObject);
-            if (craftingMap == null || !craftingMap.containsKey("Workbench")){
+            if (craftingMap == null || !craftingMap.containsKey("Furniture_Bench")){//Bench_WorkBench or Bench_Furniture
                 return;
             }
 
-            Object workbenchObject = craftingMap.get("Workbench");
+            Object workbenchObject = craftingMap.get("Furniture_Bench");
             Class benchRecipeRegistryClass = Class.forName("com.hypixel.hytale.builtin.crafting.BenchRecipeRegistry");
             Method getAllRecipesMethod = benchRecipeRegistryClass.getMethod("getAllRecipes");
             Object[] recipiesArray = (Object[]) getAllRecipesMethod.invoke(workbenchObject);
