@@ -62,6 +62,8 @@
     "Opacity": "Transparent",
     "ParticleColor": "#7a3d27",
     "State": {
+      "Id": "container",
+      "Capacity": 63,
       "Definitions": {
         "CloseWindow": {
           "InteractionSoundEventId": "SFX_Chest_Wooden_Close",
@@ -73,29 +75,7 @@
         }
       }
     },
-    "BlockEntity": {
-      "Components": {
-        "ItemContainerBlock": {
-          "Capacity": 63
-        }
-      }
-    },
-    "Supporting": {
-      "Up": [
-        {
-          "FaceType": "Full"
-        }
-      ]
-    },
-    "Support": {
-      "Down": [
-        {
-          "FaceType": "Full"
-        }
-      ]
-    },
     "VariantRotation": "NESW",
-    "InteractionHint": "server.interactionHints.openDoor",
     "Interactions": {
       "Use": "Open_Container"
     }
@@ -106,18 +86,6 @@
     ],
     "Family": [
       "Dungeon"
-    ]
-  },
-  "IconProperties": {
-    "Scale": 0.55,
-    "Rotation": [
-      22.5,
-      45,
-      22.5
-    ],
-    "Translation": [
-      0,
-      -15
     ]
   },
   "ItemSoundSetId": "ISS_Blocks_Wood",
