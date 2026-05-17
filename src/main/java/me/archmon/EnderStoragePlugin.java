@@ -56,6 +56,7 @@ public class EnderStoragePlugin extends JavaPlugin {
         this.getEntityStoreRegistry().registerSystem(enderStorageTickSystem);
         this.getEntityStoreRegistry().registerSystem(new EnderStorageBreakSystem(manager));
         this.getEntityStoreRegistry().registerSystem(new EnderStorageUseBlockSystem(manager));
+
         //warning PlayerInteractEvent is deprecated
         this.getEventRegistry().registerGlobal(PlayerInteractEvent.class, new EnderStorageListener(manager));
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {

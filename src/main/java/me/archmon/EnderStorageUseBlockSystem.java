@@ -37,9 +37,9 @@ public class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, U
     public void handle(int id, @NonNull ArchetypeChunk<EntityStore> archetypeChunk, @NonNull Store<EntityStore> store, @NonNull CommandBuffer<EntityStore> commandBuffer, UseBlockEvent.@NonNull Pre event) {
 
         InteractionType interactionType = event.getInteractionType();
-        /*if (event.getBlockType().getId().contains("EnderSafe")){
-            println("[EnderStorage] Endersafe has been interacted with by ? and didn't use .use");
-        }*/
+        /*if (event.getBlockType().getId().contains("Ender_Chest")){
+            println("[EnderStorage] Ender_Chest has been interacted with");
+        }*///only sees when player interacts with blockEnderStorageUseBlockSystem
         if (interactionType == InteractionType.Use) {
 
             BlockType blockType = event.getBlockType();
@@ -50,17 +50,15 @@ public class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, U
                 interactedBlockName = "null";
             }
 
-            if (interactedBlockName != null && interactedBlockName.contains("EnderSafe")) {//I think this is what intercepts the use of the chest
+            if (interactedBlockName != null && interactedBlockName.contains("EnderSafe")) {//intercepts the use interaction to open a new window.
                 Player player = null;
-                //println("[EnderStorage] Endersafe has been interacted with by ?");
                 try {
                     InteractionContext interactionContext = event.getContext();
                     if (interactionContext != null) {
                         Ref owningEntity = interactionContext.getOwningEntity();
                         if (owningEntity != null) {
                             player = store.getComponent(owningEntity, Player.getComponentType());
-                            //println("[EnderStorage] Endersafe has been interacted with by :"+owningEntity);
-                        }//else {println("[EnderStorage] Endersafe has been interacted with by null");}
+                        }
                     }
                 } catch (Exception err){
                 }
@@ -68,7 +66,6 @@ public class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, U
                 if (player == null) {
                     Ref refStoreID = new Ref(store,id);
                     player = (Player)store.getComponent(refStoreID, Player.getComponentType());
-                    //println("[EnderStorage] Endersafe has been interacted with by null");
                 }
 
                 if (player != null) {
@@ -77,7 +74,6 @@ public class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, U
                     byte rotationalIndex =0;
                     this.manager.openEnderStorage(player, targetedBlock.x, targetedBlock.y, targetedBlock.z, rotationalIndex, blockType1);
                     event.setCancelled(true);
-                    //println("[EnderStorage] Endersafe has been interacted with by:" + player);
                 }
             }
 
