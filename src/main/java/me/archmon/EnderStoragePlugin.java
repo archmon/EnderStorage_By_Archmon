@@ -42,13 +42,15 @@ public class EnderStoragePlugin extends JavaPlugin {
             }
         }
 
-        JsonObject configFile = this.loadConfig();
-        manager = new EnderStorageManager(configFile);
         //Initialize commands
         CommandRegistry commandRegistry = this.getCommandRegistry();
         commandRegistry.registerCommand(new EnderStorageModVersion(this.getManifest().getVersion().toString()));
         commandRegistry.registerCommand(new EnderStorageBugReport());
 
+        //initialize the Ender storage systems
+        /*The following was heavily influenced by the EnderChestMod class from original EnderChest mod by 01Kvothe10*/
+        JsonObject configFile = this.loadConfig();
+        manager = new EnderStorageManager(configFile);
         EnderStorageTickSystem enderStorageTickSystem = new EnderStorageTickSystem(manager);
         manager.setTickSystem(enderStorageTickSystem);
         this.getEntityStoreRegistry().registerSystem(enderStorageTickSystem);
@@ -63,7 +65,7 @@ public class EnderStoragePlugin extends JavaPlugin {
         }));
     }
 
-    /*The following was heavily influenced by the EnderChestMod class from original EnderChest mod by 01Kvothe10*/
+
 
     private void extractReadme() {
         try {
