@@ -111,8 +111,13 @@ public class EnderStoragePlugin extends JavaPlugin {
                     String readConfigFile = Files.readString(configFile);
                     JsonObject configJson = JsonParser.parseString(readConfigFile).getAsJsonObject();
                     boolean configInput = false;
-                    if (!configJson.has("enableCrafting")){
-                        configJson.addProperty("enableCrafting", true);
+                    if (!configJson.has("enableCrafting_EnderSafe")){
+                        configJson.addProperty("enableCrafting_EnderSafe", true);
+                        configInput = true;
+                    }
+
+                    if (!configJson.has("enableCrafting_Ender_Chest")){
+                        configJson.addProperty("enableCrafting_Ender_Chest", true);
                         configInput = true;
                     }
 
@@ -136,7 +141,8 @@ public class EnderStoragePlugin extends JavaPlugin {
 
     private JsonObject createDefaultConfig(Path configFile) throws IOException {
         JsonObject configJson = new JsonObject();
-        configJson.addProperty("enableCrafting", true);
+        configJson.addProperty("enableCrafting_EnderSafe", true);
+        configJson.addProperty("enableCrafting_Ender_Chest", true);
         configJson.add("database", this.createDefaultDbConfig());
         Files.createDirectories(configFile.getParent());
         Files.writeString(configFile, (new GsonBuilder()).setPrettyPrinting().create().toJson(configJson));
@@ -157,7 +163,8 @@ public class EnderStoragePlugin extends JavaPlugin {
     private JsonObject createDefaultConfig() {
         JsonObject configJson = new JsonObject();
         configJson.addProperty("_comment", "EnderStorage Configuration");
-        configJson.addProperty("enableCrafting", true);
+        configJson.addProperty("enableCrafting_EnderSafe", true);
+        configJson.addProperty("enableCrafting_Ender_Chest", true);
         configJson.add("database", this.createDefaultDbConfig());
         return configJson;
     }
@@ -165,17 +172,27 @@ public class EnderStoragePlugin extends JavaPlugin {
     private void handleCraftingConfig() {
         JsonObject configJson = this.loadConfig();
         boolean craftingBoolean;
-        if (configJson.has("enableCrafting")) {
-            craftingBoolean = configJson.get("enableCrafting").getAsBoolean();
+        boolean craftingBoolean2;
+        if (configJson.has("enableCrafting_EnderSafe")) {
+            craftingBoolean = configJson.get("enableCrafting_EnderSafe").getAsBoolean();
         } else {
             craftingBoolean = true;
         }
+        if (configJson.has("enableCrafting_Ender_Chest")) {
+            craftingBoolean2 = configJson.get("enableCrafting_Ender_Chest").getAsBoolean();
+        } else {
+            craftingBoolean2 = true;
+        }
+
         if (!craftingBoolean){
-            this.removeEnderSafeRecipe();
+            this.removeEnderSafeRecipe("EnderSafe");
+        }
+        if (!craftingBoolean2){
+            this.removeEnderSafeRecipe("Ender_Chest");
         }
     }
 
-    private void removeEnderSafeRecipe() {
+    private void removeEnderSafeRecipe(String blockName) {
         try {
             Class craftingPluginClass = Class.forName("com.hypixel.hytale.builtin.crafting.CraftingPlugin");
             Method getCrafting = craftingPluginClass.getMethod("get");
@@ -201,7 +218,7 @@ public class EnderStoragePlugin extends JavaPlugin {
                     Field itemIdField = recipe2.getClass().getDeclaredField("itemId");
                     itemIdField.setAccessible(true);
                     String recipeString = (String)itemIdField.get(recipe2);
-                    if ("EnderSafe".equals(recipeString)){
+                    if (blockName.equals(recipeString)){
                         Field idField = recipe.getClass().getDeclaredField("id");
                         idField.setAccessible(true);
                         removedRecipe = (String)idField.get(recipe);
@@ -223,7 +240,5 @@ public class EnderStoragePlugin extends JavaPlugin {
         return Paths.get("mods/archmon_EnderStorage");
     }
 
-    /*public static EnderStorageManager getManager() {
-        return manager;
-    }*/
+
 }
