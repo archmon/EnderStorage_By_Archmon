@@ -66,6 +66,31 @@ public class EnderStorageBreakSystem extends EntityEventSystem<EntityStore, Dama
                     }
                 }
             }
+            if (blockTypeIdString != null && blockTypeIdString.contains("Ender_Chest")) {
+                Vector3i blockPosition = damageBlockEvent.getTargetBlock();
+                if (blockPosition == null) { //consider removing cause it's always false
+                    return;
+                }
+
+                long blockPositionLong = (long)blockPosition.getX() << 42 | (long)(blockPosition.getY() & 1048575) << 22 | (long)(blockPosition.getZ()) & 4194303;
+                if (this.clearedBlocks.contains(blockPositionLong)) {
+                    return;
+                }
+
+                float blockEventCurrentDamage = damageBlockEvent.getCurrentDamage();
+                float blockEventGetDamage = damageBlockEvent.getDamage();
+                float totalDamage = blockEventCurrentDamage + blockEventGetDamage;
+
+                if (totalDamage >= 0.5F) {
+                    boolean blockBrokenBoolean = this.manager.clearContainerAt(blockPosition.getX(), blockPosition.getY(), blockPosition.getZ());
+                    if (blockBrokenBoolean) {
+                        this.clearedBlocks.add(blockPositionLong);
+                        if (this.clearedBlocks.size() > 1000) {
+                            this.clearedBlocks.clear();
+                        }
+                    }
+                }
+            }
         }
     }
 
