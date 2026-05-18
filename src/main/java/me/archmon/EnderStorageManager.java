@@ -28,7 +28,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -123,6 +122,26 @@ public class EnderStorageManager {
         itemContainer.registerChangeEvent((event) -> this.saveContainer(channelUuid, finalItemContainer));
 
         return itemContainer;
+    }
+
+    //Other mods can use this to access the shared ender chest inventory for automation purposes.
+    public ItemContainer getEnderChestInventoryForAutomation() {
+        return this.getSharedEnderChestContainer();
+    }
+
+    //This is used to save the shared ender chest inventory when the player closes the inventory window.
+    public void saveEnderChestInventory() {
+        this.saveContainer(DEFAULT_ENDER_CHEST_CHANNEL_UUID, this.getSharedEnderChestContainer());
+    }
+
+    //used in the EnderStoragePlugin to check if a block is an ender chest.
+    public boolean isEnderChestBlock(BlockType blockType) {
+        return blockType != null && blockType.getId() != null && blockType.getId().contains("Ender_Chest");
+    }
+
+    //used in the EnderStoragePlugin to check if a block is an ender safe.
+    public boolean isEnderSafeBlock(BlockType blockType) {
+        return blockType != null && blockType.getId() != null && blockType.getId().contains("EnderSafe");
     }
 
     public void openSharedEnderChest(Player player, int posX, int posY, int posZ, int rotationIndex, BlockType blockType) {

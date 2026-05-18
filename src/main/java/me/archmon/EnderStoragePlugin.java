@@ -94,10 +94,9 @@ public class EnderStoragePlugin extends JavaPlugin {
         }
     }
 
-    public static void onFirstTick() {
-        if (instance != null) {
-            instance.handleCraftingConfig();
-        }
+    //Allows other plugins to access the EnderStorageManager which is needed for the EnderStorage API.
+    public static EnderStorageManager getEnderStorageManager() {
+        return manager;
     }
 
     private JsonObject loadConfig() {
@@ -171,6 +170,7 @@ public class EnderStoragePlugin extends JavaPlugin {
         return configJson;
     }
 
+    //Called from onFirstTick() so crafting registries are available before recipes are modified.
     private void handleCraftingConfig() {
         JsonObject configJson = this.loadConfig();
         boolean craftingBoolean;
@@ -193,6 +193,13 @@ public class EnderStoragePlugin extends JavaPlugin {
             this.removeEnderSafeRecipe("Ender_Chest");
         }
     }
+
+    public static void onFirstTick() {
+        if (instance != null) {
+            instance.handleCraftingConfig();
+        }
+    }
+
 
     private void removeEnderSafeRecipe(String blockName) {
         try {
