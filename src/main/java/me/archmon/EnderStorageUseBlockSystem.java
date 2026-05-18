@@ -1,4 +1,5 @@
 //This class was heavily influenced by the EnderChestUseBlockSystem class of the original EnderChest mod by 01Kvothe10
+//this class was heavily modified by AI
 
 package me.archmon;
 
@@ -109,7 +110,7 @@ public class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, U
                     BlockType blockType1 = event.getBlockType();
                     byte rotationalIndex = 0;
 
-                    System.out.println("[EnderStorage] Vanilla Ender_Chest opened; bridge will import next tick.");
+                    //System.out.println("[EnderStorage] Vanilla Ender_Chest opened; bridge will import next tick.");
 
                     this.manager.inspectPlayerWindowsNextTick(
                             player,

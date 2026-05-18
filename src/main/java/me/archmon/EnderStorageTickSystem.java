@@ -1,4 +1,5 @@
 //This class was heavily influenced by the EnderChestTickSystem class of the original EnderChest mod by 01Kvothe10
+//this class was heavily modified by AI
 
 package me.archmon;
 
@@ -77,7 +78,7 @@ public class EnderStorageTickSystem extends EntityTickingSystem<EntityStore> {
                 boolean imported = this.manager.importWorldEnderChestContainer(pendingPhysicalImport.worldContainer);
 
                 if (imported) {
-                    System.out.println("[EnderStorage] Auto-imported physical Ender_Chest contents after container change.");
+                    //System.out.println("[EnderStorage] Auto-imported physical Ender_Chest contents after container change.");
                 }
 
                 physicalImportIterator.remove();
@@ -119,7 +120,7 @@ public class EnderStorageTickSystem extends EntityTickingSystem<EntityStore> {
                     this.manager.registerPhysicalEnderChestContainer(worldContainer);
 
                     boolean importedItems = this.manager.importWorldEnderChestContainer(worldContainer);
-                    System.out.println("[EnderStorage] Import result: " + importedItems);
+                    //System.out.println("[EnderStorage] Import result: " + importedItems);
 
                     player.getWindowManager().closeAllWindows(player.getReference(), store);
 

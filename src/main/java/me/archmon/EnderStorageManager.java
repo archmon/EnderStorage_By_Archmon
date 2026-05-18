@@ -1,4 +1,5 @@
 //This class was heavily influenced by the EnderChestManager class of the original EnderChest mod by 01Kvothe10
+//this class was heavily modified by AI
 
 package me.archmon;
 
@@ -84,7 +85,7 @@ public class EnderStorageManager {
             short numberOfSlotsInInventory =63;
 
             if (itemContainerCapacity != numberOfSlotsInInventory){//not sure if needed because size is not var
-                            this.saveContainer(uuid, itemContainer);
+                this.saveContainer(uuid, itemContainer);
                 this.loadedContainers.remove(uuid);
                 itemContainer = this.loadContainer(uuid);
                 this.loadedContainers.put(uuid, itemContainer);
@@ -161,12 +162,12 @@ public class EnderStorageManager {
             ItemContainer sharedContainer = this.getSharedEnderChestContainer();
 
             if (!(worldContainer instanceof SimpleItemContainer worldSimpleContainer)) {
-                System.out.println("[EnderStorage] World container is not a SimpleItemContainer: " + worldContainer.getClass().getName());
+                //System.out.println("[EnderStorage] World container is not a SimpleItemContainer: " + worldContainer.getClass().getName());
                 return false;
             }
 
             if (!(sharedContainer instanceof SimpleItemContainer sharedSimpleContainer)) {
-                System.out.println("[EnderStorage] Shared container is not a SimpleItemContainer: " + sharedContainer.getClass().getName());
+                //System.out.println("[EnderStorage] Shared container is not a SimpleItemContainer: " + sharedContainer.getClass().getName());
                 return false;
             }
 
@@ -378,7 +379,7 @@ public class EnderStorageManager {
             return;
         }
 
-        System.out.println("[EnderStorage] Registered physical Ender_Chest container change listener.");
+        //System.out.println("[EnderStorage] Registered physical Ender_Chest container change listener.");
 
         worldContainer.registerChangeEvent((event) -> {
             if (!this.canAutoImportPhysicalContainer(worldContainer)) {
