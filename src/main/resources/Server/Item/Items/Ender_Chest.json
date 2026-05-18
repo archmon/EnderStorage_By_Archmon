@@ -73,13 +73,6 @@
         }
       }
     },
-    "BlockEntity": {
-      "Components": {
-        "ItemContainerBlock": {
-          "Capacity": 63
-        }
-      }
-    },
     "Supporting": {
       "Up": [
         {

@@ -41,12 +41,8 @@ public class EnderStorageManager {
     private static final UUID DEFAULT_ENDER_CHEST_CHANNEL_UUID = UUID.nameUUIDFromBytes("EnderStorage:Ender_Chest:default".getBytes());
     private final Map<UUID, ItemContainer> loadedContainers = new ConcurrentHashMap();
     private final Map<UUID, ItemContainer> loadedEnderChestContainers = new ConcurrentHashMap();
-    private final Set<ItemContainer> registeredPhysicalEnderChestContainers = ConcurrentHashMap.newKeySet();
-    private final Set<ItemContainer> importingPhysicalEnderChestContainers = ConcurrentHashMap.newKeySet();
-    private final Map<ItemContainer, Long> physicalEnderChestImportCooldowns = new ConcurrentHashMap<>();
     private final Gson gson = (new GsonBuilder()).setPrettyPrinting().create();
     private final DatabaseHandler dbJsonObject;
-    private final Map<Long, ItemContainer> positionContainers = new ConcurrentHashMap<>();
     private EnderStorageTickSystem tickSystem;
 
     public EnderStorageManager(JsonObject dbConfigFile) {
@@ -146,70 +142,6 @@ public class EnderStorageManager {
         Ref playerReference = player.getReference();
         Store playerReferenceStore = playerReference.getStore();
         player.getPageManager().setPageWithWindows(playerReference, playerReferenceStore, Page.Bench, true, new Window[]{(Window)containerBlockWindow});
-    }
-
-    public boolean importWorldEnderChestContainer(ItemContainer worldContainer) {
-        if (worldContainer == null) {
-            return false;
-        }
-
-        if (!this.importingPhysicalEnderChestContainers.add(worldContainer)) {
-            return false;
-        }
-
-        try {
-            UUID channelUuid = DEFAULT_ENDER_CHEST_CHANNEL_UUID;
-            ItemContainer sharedContainer = this.getSharedEnderChestContainer();
-
-            if (!(worldContainer instanceof SimpleItemContainer worldSimpleContainer)) {
-                //System.out.println("[EnderStorage] World container is not a SimpleItemContainer: " + worldContainer.getClass().getName());
-                return false;
-            }
-
-            if (!(sharedContainer instanceof SimpleItemContainer sharedSimpleContainer)) {
-                //System.out.println("[EnderStorage] Shared container is not a SimpleItemContainer: " + sharedContainer.getClass().getName());
-                return false;
-            }
-
-            boolean changed = false;
-            short worldCapacity = worldSimpleContainer.getCapacity();
-
-            for (short worldSlot = 0; worldSlot < worldCapacity; worldSlot++) {
-                ItemStack worldStack = worldSimpleContainer.getItemStack(worldSlot);
-
-                if (worldStack == null || worldStack.isEmpty()) {
-                    continue;
-                }
-
-                if (this.moveStackIntoContainer(worldStack, sharedSimpleContainer)) {
-                    worldSimpleContainer.setItemStackForSlot(worldSlot, null);
-                    changed = true;
-                }
-            }
-
-            if (changed) {
-                this.saveContainer(channelUuid, sharedSimpleContainer);
-            }
-
-            return changed;
-        } finally {
-            this.importingPhysicalEnderChestContainers.remove(worldContainer);
-        }
-    }
-
-    private boolean moveStackIntoContainer(ItemStack itemStack, SimpleItemContainer targetContainer) {
-        short targetCapacity = targetContainer.getCapacity();
-
-        for (short targetSlot = 0; targetSlot < targetCapacity; targetSlot++) {
-            ItemStack existingStack = targetContainer.getItemStack(targetSlot);
-
-            if (existingStack == null || existingStack.isEmpty()) {
-                targetContainer.setItemStackForSlot(targetSlot, itemStack);
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private ItemContainer loadContainer(UUID uuid){
@@ -323,71 +255,6 @@ public class EnderStorageManager {
 
     public void setTickSystem(EnderStorageTickSystem tick) {
         this.tickSystem = tick;
-    }
-
-    public void inspectPlayerWindowsNextTick(Player player, int x, int y, int z, int rotationIndex, BlockType blockType) {
-        if (this.tickSystem != null) {
-            this.tickSystem.inspectPlayerWindowsNextTick(player, x, y, z, rotationIndex, blockType);
-        }
-    }
-
-    public void schedulePhysicalEnderChestImport(ItemContainer worldContainer) {
-        if (this.tickSystem != null) {
-            this.tickSystem.schedulePhysicalEnderChestImport(worldContainer);
-        }
-    }
-
-    private static long positionKey(int blockPositionX, int blockPositionY, int blockPositionZ) {
-        return (long)blockPositionX << 42 | (long)(blockPositionY & 1048575) << 22 | (long)(blockPositionZ & 4194303);
-    }
-
-    public boolean clearContainerAt(int blockPositionX, int blockPositionY, int blockPositionZ) {
-        long positionKeyLong = positionKey(blockPositionX, blockPositionY, blockPositionZ);
-        ItemContainer itemContainer = (ItemContainer) this.positionContainers.get(positionKeyLong);
-        if (itemContainer == null){
-            return false;
-        } else {
-            short itemContainerCapacity = itemContainer.getCapacity();
-
-            for (int slot = 0; slot < itemContainerCapacity; ++slot) {
-                itemContainer.setItemStackForSlot((short)slot, (ItemStack) null);
-            }
-
-            this.positionContainers.remove(positionKeyLong);
-            return true;
-        }
-    }
-
-    private boolean canAutoImportPhysicalContainer(ItemContainer worldContainer) {
-        long now = System.currentTimeMillis();
-        Long lastImportTime = this.physicalEnderChestImportCooldowns.get(worldContainer);
-
-        if (lastImportTime != null && now - lastImportTime < 1000L) {
-            return false;
-        }
-
-        this.physicalEnderChestImportCooldowns.put(worldContainer, now);
-        return true;
-    }
-
-    public void registerPhysicalEnderChestContainer(ItemContainer worldContainer) {
-        if (worldContainer == null) {
-            return;
-        }
-
-        if (!this.registeredPhysicalEnderChestContainers.add(worldContainer)) {
-            return;
-        }
-
-        //System.out.println("[EnderStorage] Registered physical Ender_Chest container change listener.");
-
-        worldContainer.registerChangeEvent((event) -> {
-            if (!this.canAutoImportPhysicalContainer(worldContainer)) {
-                return;
-            }
-
-            this.schedulePhysicalEnderChestImport(worldContainer);
-        });
     }
 
 

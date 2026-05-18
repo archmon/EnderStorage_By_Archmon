@@ -54,7 +54,6 @@ public class EnderStoragePlugin extends JavaPlugin {
         EnderStorageTickSystem enderStorageTickSystem = new EnderStorageTickSystem(manager);
         manager.setTickSystem(enderStorageTickSystem);
         this.getEntityStoreRegistry().registerSystem(enderStorageTickSystem);
-        this.getEntityStoreRegistry().registerSystem(new EnderStorageBreakSystem(manager));
         this.getEntityStoreRegistry().registerSystem(new EnderStorageUseBlockSystem(manager));
 
         //warning PlayerInteractEvent is deprecated

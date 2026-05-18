@@ -110,9 +110,7 @@ public class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, U
                     BlockType blockType1 = event.getBlockType();
                     byte rotationalIndex = 0;
 
-                    //System.out.println("[EnderStorage] Vanilla Ender_Chest opened; bridge will import next tick.");
-
-                    this.manager.inspectPlayerWindowsNextTick(
+                    this.manager.openSharedEnderChest(
                             player,
                             targetedBlock.x,
                             targetedBlock.y,
@@ -120,13 +118,13 @@ public class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, U
                             rotationalIndex,
                             blockType1
                     );
+
+                    event.setCancelled(true);
                 }
 
-                return;
-            }
+                    return;
+                }
 
+            }
         }
     }
-
-
-}
