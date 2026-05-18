@@ -14,13 +14,10 @@ import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.server.core.entity.InteractionContext;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.ecs.UseBlockEvent;
-import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.jspecify.annotations.NonNull;
 
-import java.lang.reflect.Method;
 
-import static java.lang.IO.println;
 
 public class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, UseBlockEvent.Pre> {
 
@@ -112,7 +109,9 @@ public class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, U
                     BlockType blockType1 = event.getBlockType();
                     byte rotationalIndex = 0;
 
-                    this.manager.openSharedEnderChest(
+                    System.out.println("[EnderStorage] Vanilla Ender_Chest opened; bridge will import next tick.");
+
+                    this.manager.inspectPlayerWindowsNextTick(
                             player,
                             targetedBlock.x,
                             targetedBlock.y,
@@ -120,16 +119,12 @@ public class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, U
                             rotationalIndex,
                             blockType1
                     );
-
-                    event.setCancelled(true);
                 }
+
+                return;
             }
 
         }
-    }
-
-    private ItemContainer getWorldContainerAt(Vector3i targetedBlock) {
-        return null;
     }
 
 
