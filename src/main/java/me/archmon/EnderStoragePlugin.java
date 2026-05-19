@@ -6,7 +6,6 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.hypixel.hytale.server.core.command.system.CommandRegistry;
-import com.hypixel.hytale.server.core.event.events.player.PlayerInteractEvent;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import me.archmon.commands.EnderStorageBugReport;
@@ -56,9 +55,6 @@ public class EnderStoragePlugin extends JavaPlugin {
         this.getEntityStoreRegistry().registerSystem(enderStorageTickSystem);
         this.getEntityStoreRegistry().registerSystem(new EnderStorageUseBlockSystem(manager));
 
-        //warning PlayerInteractEvent is deprecated
-        //noinspection deprecation
-        this.getEventRegistry().registerGlobal(PlayerInteractEvent.class, new EnderStorageListener(manager));
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             if (manager != null) {
                 manager.saveAll();
