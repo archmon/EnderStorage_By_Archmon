@@ -29,6 +29,7 @@ public class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, U
 
     @Override
     public Query<EntityStore> getQuery() {
+        //noinspection unchecked
         return Query.and(new Query[]{Player.getComponentType()});
     }
 
@@ -99,20 +100,18 @@ public class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, U
         Player player = null;
 
         try {
-            InteractionContext interactionContext = event.getContext();
+            InteractionContext interactionContext = event.getContext();//note to self; getContext() is non-null
 
-            if (interactionContext != null) {
-                Ref owningEntity = interactionContext.getOwningEntity();
+            @SuppressWarnings("rawtypes") Ref owningEntity = interactionContext.getOwningEntity();
+            //noinspection unchecked
+            player = store.getComponent(owningEntity, Player.getComponentType());
 
-                if (owningEntity != null) {
-                    player = store.getComponent(owningEntity, Player.getComponentType());
-                }
-            }
         } catch (Exception ignored) {
         }
 
         if (player == null) {
-            Ref refStoreID = new Ref(store, id);
+            @SuppressWarnings({"rawtypes", "unchecked"}) Ref refStoreID = new Ref(store, id);
+            //noinspection unchecked
             player = store.getComponent(refStoreID, Player.getComponentType());
         }
 

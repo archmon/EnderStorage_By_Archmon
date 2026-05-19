@@ -20,7 +20,7 @@ import java.lang.reflect.Method;
 import java.nio.file.*;
 import java.util.Map;
 
-@SuppressWarnings("deprecation")
+
 public class EnderStoragePlugin extends JavaPlugin {
 
     private static EnderStoragePlugin instance;
@@ -35,10 +35,10 @@ public class EnderStoragePlugin extends JavaPlugin {
         instance = this;
         this.extractReadme();
         Path modFolder = this.findModFolder();
-        if (modFolder != null && !Files.exists(modFolder, new LinkOption[0])) {
+        if (!Files.exists(modFolder, new LinkOption[0])) {
             try {
                 Files.createDirectories(modFolder);
-            } catch (Exception err){
+            } catch (Exception _){
             }
         }
 
@@ -57,6 +57,7 @@ public class EnderStoragePlugin extends JavaPlugin {
         this.getEntityStoreRegistry().registerSystem(new EnderStorageUseBlockSystem(manager));
 
         //warning PlayerInteractEvent is deprecated
+        //noinspection deprecation
         this.getEventRegistry().registerGlobal(PlayerInteractEvent.class, new EnderStorageListener(manager));
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             if (manager != null) {
@@ -70,10 +71,6 @@ public class EnderStoragePlugin extends JavaPlugin {
     private void extractReadme() {
         try {
             Path modFolder = this.findModFolder();
-
-            if (modFolder == null) {
-                return;
-            }
 
             Path readMeFile = modFolder.resolve("README.txt");
             if (Files.exists(readMeFile, new LinkOption[0]) && Files.size(readMeFile) > 0L) {
@@ -90,11 +87,12 @@ public class EnderStoragePlugin extends JavaPlugin {
                 }
             }
         } catch (Exception err){
+            //noinspection CallToPrintStackTrace
             err.printStackTrace();
         }
     }
 
-    //Allows other plugins to access the EnderStorageManager which is needed for the EnderStorage API.
+    //Allows other plugins to access the EnderStorageManager, which is needed for the EnderStorage API.
     public static EnderStorageManager getEnderStorageManager() {
         return manager;
     }
@@ -102,37 +100,33 @@ public class EnderStoragePlugin extends JavaPlugin {
     private JsonObject loadConfig() {
         try {
             Path modFolder = this.findModFolder();
-            if (modFolder == null){
-                return this.createDefaultConfig();
+            Path configFile = modFolder.resolve("config.json");
+            if (!Files.exists(configFile, new LinkOption[0])){
+                return this.createDefaultConfig(configFile);
             } else {
-                Path configFile = modFolder.resolve("config.json");
-                if (!Files.exists(configFile, new LinkOption[0])){
-                    return this.createDefaultConfig(configFile);
-                } else {
-                    String readConfigFile = Files.readString(configFile);
-                    JsonObject configJson = JsonParser.parseString(readConfigFile).getAsJsonObject();
-                    boolean configInput = false;
-                    if (!configJson.has("enableCrafting_EnderSafe")){
-                        configJson.addProperty("enableCrafting_EnderSafe", true);
-                        configInput = true;
-                    }
-
-                    if (!configJson.has("enableCrafting_Ender_Chest")){
-                        configJson.addProperty("enableCrafting_Ender_Chest", true);
-                        configInput = true;
-                    }
-
-                    if (!configJson.has("database")){
-                        configJson.add("database", this.createDefaultDbConfig());
-                        configInput = true;
-                    }
-
-                    if(configInput) {
-                        Files.writeString(configFile, (new GsonBuilder()).setPrettyPrinting().create().toJson(configJson));
-                    }
-
-                    return configJson;
+                String readConfigFile = Files.readString(configFile);
+                JsonObject configJson = JsonParser.parseString(readConfigFile).getAsJsonObject();
+                boolean configInput = false;
+                if (!configJson.has("enableCrafting_EnderSafe")){
+                    configJson.addProperty("enableCrafting_EnderSafe", true);
+                    configInput = true;
                 }
+
+                if (!configJson.has("enableCrafting_Ender_Chest")){
+                    configJson.addProperty("enableCrafting_Ender_Chest", true);
+                    configInput = true;
+                }
+
+                if (!configJson.has("database")){
+                    configJson.add("database", this.createDefaultDbConfig());
+                    configInput = true;
+                }
+
+                if(configInput) {
+                    Files.writeString(configFile, (new GsonBuilder()).setPrettyPrinting().create().toJson(configJson));
+                }
+
+                return configJson;
             }
         }catch (Exception err){
             return this.createDefaultDbConfig();
@@ -161,6 +155,7 @@ public class EnderStoragePlugin extends JavaPlugin {
         return configJson;
     }
 
+    //There is a method of the same name above that has an input of a path variable
     private JsonObject createDefaultConfig() {
         JsonObject configJson = new JsonObject();
         configJson.addProperty("_comment", "EnderStorage Configuration");
@@ -203,23 +198,23 @@ public class EnderStoragePlugin extends JavaPlugin {
 
     private void removeEnderSafeRecipe(String blockName) {
         try {
-            Class craftingPluginClass = Class.forName("com.hypixel.hytale.builtin.crafting.CraftingPlugin");
-            Method getCrafting = craftingPluginClass.getMethod("get");
+            @SuppressWarnings("rawtypes") Class craftingPluginClass = Class.forName("com.hypixel.hytale.builtin.crafting.CraftingPlugin");
+            @SuppressWarnings("unchecked") Method getCrafting = craftingPluginClass.getMethod("get");
             Object craftingObject = getCrafting.invoke((Object)null);
             Field registriesField = craftingPluginClass.getDeclaredField("registries");
             registriesField.setAccessible(true);
-            Map craftingMap = (Map)registriesField.get(craftingObject);
+            @SuppressWarnings("rawtypes") Map craftingMap = (Map)registriesField.get(craftingObject);
             if (craftingMap == null || !craftingMap.containsKey("Furniture_Bench")){//Bench_WorkBench or Bench_Furniture
                 return;
             }
 
             Object workbenchObject = craftingMap.get("Furniture_Bench");
-            Class benchRecipeRegistryClass = Class.forName("com.hypixel.hytale.builtin.crafting.BenchRecipeRegistry");
-            Method getAllRecipesMethod = benchRecipeRegistryClass.getMethod("getAllRecipes");
-            Object[] recipiesArray = (Object[]) getAllRecipesMethod.invoke(workbenchObject);
+            @SuppressWarnings("rawtypes") Class benchRecipeRegistryClass = Class.forName("com.hypixel.hytale.builtin.crafting.BenchRecipeRegistry");
+            @SuppressWarnings("unchecked") Method getAllRecipesMethod = benchRecipeRegistryClass.getMethod("getAllRecipes");
+            Object[] recipesArray = (Object[]) getAllRecipesMethod.invoke(workbenchObject);
             String removedRecipe = null;
 
-            for (Object recipe : recipiesArray) {
+            for (Object recipe : recipesArray) {
                 Field primaryOutputField = recipe.getClass().getDeclaredField("primaryOutput");
                 primaryOutputField.setAccessible(true);
                 Object recipe2 = primaryOutputField.get(recipe);
@@ -237,10 +232,11 @@ public class EnderStoragePlugin extends JavaPlugin {
             }
 
             if (removedRecipe != null) {
-                Method removedRecipeMethod = benchRecipeRegistryClass.getMethod("removeRecipe", String.class);
+                @SuppressWarnings("unchecked") Method removedRecipeMethod = benchRecipeRegistryClass.getMethod("removeRecipe", String.class);
                 removedRecipeMethod.invoke(workbenchObject, removedRecipe);
             }
         } catch (Exception err) {
+            //noinspection CallToPrintStackTrace
             err.printStackTrace();
         }
     }

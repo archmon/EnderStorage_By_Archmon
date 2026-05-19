@@ -50,7 +50,7 @@ public class DatabaseHandler {
                 String password;
                 String host;
                 int port;
-                String databaseFileName; //move this up to the constructor for use with both the Safe and chest. maybe.
+                String databaseFileName;
 
                 if (jsonObject.has("user")){
                     user = jsonObject.get("user").getAsString();
@@ -101,6 +101,7 @@ public class DatabaseHandler {
 
                 File fileLocation = new File("mods/archmon_EnderStorage");
                 if (!fileLocation.exists()){
+                    //noinspection ResultOfMethodCallIgnored
                     fileLocation.mkdirs(); //if folder doesn't exist, make it.
                 }
 
@@ -180,6 +181,7 @@ public class DatabaseHandler {
                 this.connection.close();
             }
         } catch (SQLException errorClose) {
+            //noinspection CallToPrintStackTrace
             errorClose.printStackTrace();
         }
     }
