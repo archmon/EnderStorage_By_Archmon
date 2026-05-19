@@ -47,7 +47,6 @@ public class EnderStoragePlugin extends JavaPlugin {
         commandRegistry.registerCommand(new EnderStorageBugReport());
 
         //initialize the Ender storage systems
-        /*The following was heavily influenced by the EnderChestMod class from original EnderChest mod by 01Kvothe10*/
         JsonObject configFile = this.loadConfig();
         manager = new EnderStorageManager(configFile);
         EnderStorageTickSystem enderStorageTickSystem = new EnderStorageTickSystem(manager);

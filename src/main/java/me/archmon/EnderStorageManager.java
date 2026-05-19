@@ -20,12 +20,7 @@ import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
 import com.hypixel.hytale.server.core.inventory.container.SimpleItemContainer;
 import com.hypixel.hytale.server.core.util.BsonUtil;
 
-import java.io.IOException;
 import java.io.PrintStream;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -36,23 +31,13 @@ import org.bson.BsonDocument;
 @SuppressWarnings("removal")
 public class EnderStorageManager {
 
-    private static final Path DATA_DIR = Paths.get("mods/archmon_EnderStorage/ender_storage_data"); //Is this used for anything?
     private static final UUID DEFAULT_ENDER_CHEST_CHANNEL_UUID = UUID.nameUUIDFromBytes("EnderStorage:Ender_Chest:default".getBytes());
-    private final Map<UUID, ItemContainer> loadedContainers = new ConcurrentHashMap();
-    private final Map<UUID, ItemContainer> loadedEnderChestContainers = new ConcurrentHashMap();
+    @SuppressWarnings({"rawtypes", "unchecked"}) private final Map<UUID, ItemContainer> loadedContainers = new ConcurrentHashMap();
+    @SuppressWarnings({"rawtypes", "unchecked"}) private final Map<UUID, ItemContainer> loadedEnderChestContainers = new ConcurrentHashMap();
     private final Gson gson = (new GsonBuilder()).setPrettyPrinting().create();
     private final DatabaseHandler dbJsonObject;
-    private EnderStorageTickSystem tickSystem;
 
     public EnderStorageManager(JsonObject dbConfigFile) {
-
-        try {
-            if (!Files.exists(DATA_DIR, new LinkOption[0])){
-                Files.createDirectories(DATA_DIR);
-            }
-        } catch (IOException folderNotFound1) {
-            folderNotFound1.printStackTrace();
-        }
 
         JsonObject databaseJsonObject = dbConfigFile.get("database").getAsJsonObject();
         this.dbJsonObject = new DatabaseHandler(databaseJsonObject);
@@ -75,23 +60,23 @@ public class EnderStorageManager {
         final ItemContainer finalItemContainer2;
 
         if (this.loadedContainers.containsKey(uuid)){
-            itemContainer = (ItemContainer)this.loadedContainers.get(uuid);
+            itemContainer = this.loadedContainers.get(uuid);
             short itemContainerCapacity = itemContainer.getCapacity();
             short numberOfSlotsInInventory =63;
 
-            if (itemContainerCapacity != numberOfSlotsInInventory){//not sure if needed because size is not var
+            if (itemContainerCapacity != numberOfSlotsInInventory){//not sure if needed it because size is not var
                 this.saveContainer(uuid, itemContainer);
                 this.loadedContainers.remove(uuid);
                 itemContainer = this.loadContainer(uuid);
                 this.loadedContainers.put(uuid, itemContainer);
                 finalItemContainer=itemContainer;
-                itemContainer.registerChangeEvent((var3) -> this.saveContainer(uuid, finalItemContainer));
+                itemContainer.registerChangeEvent((_) -> this.saveContainer(uuid, finalItemContainer));
             }
         } else {
             itemContainer = this.loadContainer(uuid);
             this.loadedContainers.put(uuid, itemContainer);
             finalItemContainer=itemContainer;
-            itemContainer.registerChangeEvent((var3) -> this.saveContainer(uuid, finalItemContainer));
+            itemContainer.registerChangeEvent((_) -> this.saveContainer(uuid, finalItemContainer));
         }
 
         Object containerBlockWindow;
@@ -102,9 +87,11 @@ public class EnderStorageManager {
         }
 
         finalItemContainer2 = itemContainer;
-        ((Window)containerBlockWindow).registerCloseEvent((var3x)-> this.saveContainer(uuid, finalItemContainer2));
-        Ref playerReference = player.getReference();
-        Store playerReferenceStore = playerReference.getStore();
+        ((Window)containerBlockWindow).registerCloseEvent((_)-> this.saveContainer(uuid, finalItemContainer2));
+        @SuppressWarnings("rawtypes") Ref playerReference = player.getReference();
+        assert playerReference != null;
+        @SuppressWarnings("rawtypes") Store playerReferenceStore = playerReference.getStore();
+        //noinspection unchecked
         player.getPageManager().setPageWithWindows(playerReference, playerReferenceStore, Page.Bench, true, new Window[]{(Window)containerBlockWindow});
     }
 
@@ -119,7 +106,7 @@ public class EnderStorageManager {
         this.loadedEnderChestContainers.put(channelUuid, itemContainer);
 
         final ItemContainer finalItemContainer = itemContainer;
-        itemContainer.registerChangeEvent((event) -> this.saveContainer(channelUuid, finalItemContainer));
+        itemContainer.registerChangeEvent((_) -> this.saveContainer(channelUuid, finalItemContainer));
 
         return itemContainer;
     }
@@ -156,10 +143,12 @@ public class EnderStorageManager {
         }
 
         final ItemContainer finalItemContainer = itemContainer;
-        ((Window)containerBlockWindow).registerCloseEvent((event) -> this.saveContainer(channelUuid, finalItemContainer));
+        ((Window)containerBlockWindow).registerCloseEvent((_) -> this.saveContainer(channelUuid, finalItemContainer));
 
-        Ref playerReference = player.getReference();
-        Store playerReferenceStore = playerReference.getStore();
+        @SuppressWarnings("rawtypes") Ref playerReference = player.getReference();
+        assert playerReference != null;
+        @SuppressWarnings("rawtypes") Store playerReferenceStore = playerReference.getStore();
+        //noinspection unchecked
         player.getPageManager().setPageWithWindows(playerReference, playerReferenceStore, Page.Bench, true, new Window[]{(Window)containerBlockWindow});
     }
 
@@ -171,21 +160,15 @@ public class EnderStorageManager {
 
         try{
             String jsonStringInventory_Data = this.dbJsonObject.getInventory(uuid);
-            if (jsonStringInventory_Data == null) {
-                Path directoryPath = DATA_DIR.resolve(uuid.toString()+".json");
-                if (Files.exists(directoryPath, new LinkOption[0])) {
-                    jsonStringInventory_Data = Files.readString(directoryPath);
-                    this.saveInventoryToDB(uuid, jsonStringInventory_Data);
-                }
-            }
 
             if (jsonStringInventory_Data != null) {
-                Map<Integer, EnderStorageManager.SavedItem> inventoryLoadOutOfChest = (Map)this.gson.fromJson(jsonStringInventory_Data, (new TypeToken<Map<Integer, EnderStorageManager.SavedItem>>() {{
+                Map<Integer, EnderStorageManager.SavedItem> inventoryLoadOutOfChest = (Map)this.gson.fromJson(jsonStringInventory_Data,
+                        (new TypeToken<Map<Integer, EnderStorageManager.SavedItem>>() {{
                         Objects.requireNonNull(EnderStorageManager.this);
                     }}).getType());
 
                 if (inventoryLoadOutOfChest != null) {
-                    for(Map.Entry databaseTable : inventoryLoadOutOfChest.entrySet()){
+                    for(@SuppressWarnings("rawtypes") Map.Entry databaseTable : inventoryLoadOutOfChest.entrySet()){
                         int inventorySlotKeyNumber = (Integer)databaseTable.getKey();
                         SavedItem databaseSavedItem = (SavedItem)databaseTable.getValue();
 
@@ -210,7 +193,7 @@ public class EnderStorageManager {
 
                             itemStack = itemStack.withDurability(databaseSavedItem.durability);
                             simpleItemContainer.setItemStackForSlot((short) inventorySlotKeyNumber, itemStack);
-                        } catch (Exception err) {
+                        } catch (Exception _) {
                         }
                     }
                 }
@@ -228,11 +211,11 @@ public class EnderStorageManager {
     public void saveContainer(UUID uuid, ItemContainer itemContainer){
 
         if (this.dbJsonObject != null &&  this.dbJsonObject.isConnected()) {
-            ConcurrentHashMap concurrentHashMap = new ConcurrentHashMap();
-            short itemContainerCapacity = ((SimpleItemContainer)itemContainer).getCapacity();
+            @SuppressWarnings("rawtypes") ConcurrentHashMap concurrentHashMap = new ConcurrentHashMap();
+            short itemContainerCapacity = itemContainer.getCapacity();
 
             for (short i=0; i < itemContainerCapacity; ++i) {
-                ItemStack itemStack = ((SimpleItemContainer)itemContainer).getItemStack(i);
+                ItemStack itemStack = itemContainer.getItemStack(i);
                 if (itemStack != null && !itemStack.isEmpty()) {
                     String nullString = null;
                     if (itemStack.getMetadata() != null) {//warning: getMetadata is deprecated.
@@ -240,7 +223,8 @@ public class EnderStorageManager {
                     }
 
                     double itemStackDurability = itemStack.getDurability();
-                    concurrentHashMap.put(Integer.valueOf(i), new SavedItem(itemStack.getItemId(), itemStack.getQuantity(), nullString, itemStackDurability));
+                    //noinspection unchecked
+                    concurrentHashMap.put((int) i, new SavedItem(itemStack.getItemId(), itemStack.getQuantity(), nullString, itemStackDurability));
                 }
             }
 
@@ -261,11 +245,11 @@ public class EnderStorageManager {
     }
 
     public void saveAll() {
-        for (Map.Entry keyValue : this.loadedContainers.entrySet()) {
+        for (@SuppressWarnings("rawtypes") Map.Entry keyValue : this.loadedContainers.entrySet()) {
             this.saveContainer((UUID)keyValue.getKey(), (ItemContainer)keyValue.getValue());
         }
 
-        for (Map.Entry keyValue : this.loadedEnderChestContainers.entrySet()) {
+        for (@SuppressWarnings("rawtypes") Map.Entry keyValue : this.loadedEnderChestContainers.entrySet()) {
             this.saveContainer((UUID)keyValue.getKey(), (ItemContainer)keyValue.getValue());
         }
 
@@ -273,7 +257,7 @@ public class EnderStorageManager {
     }
 
     public void setTickSystem(EnderStorageTickSystem tick) {
-        this.tickSystem = tick;
+        //used for the removing recipes
     }
 
 
