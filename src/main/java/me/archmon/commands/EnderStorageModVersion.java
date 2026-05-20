@@ -18,6 +18,6 @@ public class EnderStorageModVersion extends CommandBase {
 
     @Override
     protected void executeSync(@NonNull CommandContext ctx) {
-        ctx.sendMessage(Message.raw("Hello from the EnderStorage_By_Archmon v" + pluginVersion + " Mod!"));
+        ctx.sendMessage(Message.raw("EnderStorage_By_Archmon mod version is v" + pluginVersion + " Mod!"));
     }
 }

@@ -1,6 +1,3 @@
-//This class was heavily influenced by the EnderChestManager class of the original EnderChest mod by 01Kvothe10
-//this class was heavily modified by AI
-
 package me.archmon;
 
 import com.google.gson.Gson;
@@ -56,7 +53,7 @@ public class EnderStorageManager {
     public void openEnderStorage(Player player, UUID uuid, int posX, int posY, int posZ, int rotationIndex, BlockType blockType) {
 
         ItemContainer itemContainer;
-        final ItemContainer finalItemContainer;//had to use lamba "->" to assign value because it should be final or effectively final warning
+        final ItemContainer finalItemContainer;
         final ItemContainer finalItemContainer2;
 
         if (this.loadedContainers.containsKey(uuid)){
@@ -64,7 +61,7 @@ public class EnderStorageManager {
             short itemContainerCapacity = itemContainer.getCapacity();
             short numberOfSlotsInInventory =63;
 
-            if (itemContainerCapacity != numberOfSlotsInInventory){//not sure if needed it because size is not var
+            if (itemContainerCapacity != numberOfSlotsInInventory){
                 this.saveContainer(uuid, itemContainer);
                 this.loadedContainers.remove(uuid);
                 itemContainer = this.loadContainer(uuid);
@@ -80,7 +77,7 @@ public class EnderStorageManager {
         }
 
         Object containerBlockWindow;
-        if (blockType != null && itemContainer.getCapacity() == 63){//investigate if this can be simplified
+        if (blockType != null && itemContainer.getCapacity() == 63){
             containerBlockWindow = new ContainerBlockWindow(posX, posY, posZ, rotationIndex, blockType, itemContainer);
         } else {
             containerBlockWindow = new ContainerWindow(itemContainer);
@@ -127,8 +124,8 @@ public class EnderStorageManager {
     }
 
     //used in the EnderStoragePlugin to check if a block is an ender safe.
-    public boolean isEnderSafeBlock(BlockType blockType) {
-        return blockType != null && blockType.getId() != null && blockType.getId().contains("EnderSafe");
+    public boolean isPocket_DimensionSafeBlock(BlockType blockType) {
+        return blockType != null && blockType.getId() != null && blockType.getId().contains("pocket_DimensionSafe");
     }
 
     public void openSharedEnderChest(Player player, int posX, int posY, int posZ, int rotationIndex, BlockType blockType) {

@@ -40,10 +40,10 @@
   "BlockType": {
     "BlockParticleSetId": "Wood",
     "BlockSoundSetId": "Wood",
-    "CustomModel": "Blocks/Chest_Ender_Storage.blockymodel",
+    "CustomModel": "Blocks/Ender_Chest.blockymodel",
     "CustomModelTexture": [
       {
-        "Texture": "BlockTextures/Chest_Ender_Texture.png",
+        "Texture": "BlockTextures/EnderStorage_Chests_Texture.png",
         "Weight": 1
       }
     ],

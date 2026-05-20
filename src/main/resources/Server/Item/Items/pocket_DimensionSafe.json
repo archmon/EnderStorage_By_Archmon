@@ -1,14 +1,14 @@
 {
   "TranslationProperties": {
-    "Name": "server.items.EnderSafe.name",
-    "Description": "server.items.EnderSafe.description"
+    "Name": "server.items.pocket_DimensionSafe.name",
+    "Description": "server.items.pocket_DimensionSafe.description"
   },
   "PlayerAnimationsId": "Block",
   "Categories": [
     "Furniture.Containers"
   ],
   "Set": "Furniture_Adventure",
-  "Icon": "Icons/ItemsGenerated/EnderSafe.png",
+  "Icon": "Icons/ItemsGenerated/pocket_DimensionSafe.png",
   "Recipe": {
     "TimeSeconds": 5,
     "KnowledgeRequired": false,
@@ -40,10 +40,10 @@
   "BlockType": {
     "BlockParticleSetId": "Wood",
     "BlockSoundSetId": "Wood",
-    "CustomModel": "Blocks/Chest_Ender_Personal.blockymodel",
+    "CustomModel": "Blocks/pocket_DimensionSafe.blockymodel",
     "CustomModelTexture": [
       {
-        "Texture": "BlockTextures/Chest_Ender_Texture.png",
+        "Texture": "BlockTextures/EnderStorage_Chests_Texture.png",
         "Weight": 1
       }
     ],

@@ -1,5 +1,3 @@
-//This class was heavily influenced by the EnderChestMod class of the original EnderChest mod by 01Kvothe10
-
 package me.archmon;
 
 import com.google.gson.GsonBuilder;
@@ -102,13 +100,13 @@ public class EnderStoragePlugin extends JavaPlugin {
                 String readConfigFile = Files.readString(configFile);
                 JsonObject configJson = JsonParser.parseString(readConfigFile).getAsJsonObject();
                 boolean configInput = false;
-                if (!configJson.has("enableCrafting_EnderSafe")){
-                    configJson.addProperty("enableCrafting_EnderSafe", true);
+                if (!configJson.has("enableCrafting_pocket_DimensionSafe")){
+                    configJson.addProperty("enableCrafting_pocket_DimensionSafe", true);
                     configInput = true;
                 }
 
                 if (!configJson.has("enableCrafting_Ender_Chest")){
-                    configJson.addProperty("enableCrafting_Ender_Chest", true);
+                    configJson.addProperty("enableCrafting_Ender_Chest", true);//Note to self: add wrench
                     configInput = true;
                 }
 
@@ -131,7 +129,7 @@ public class EnderStoragePlugin extends JavaPlugin {
 
     private JsonObject createDefaultConfig(Path configFile) throws IOException {
         JsonObject configJson = new JsonObject();
-        configJson.addProperty("enableCrafting_EnderSafe", true);
+        configJson.addProperty("enableCrafting_pocket_DimensionSafe", true);
         configJson.addProperty("enableCrafting_Ender_Chest", true);
         configJson.add("database", this.createDefaultDbConfig());
         Files.createDirectories(configFile.getParent());
@@ -154,7 +152,7 @@ public class EnderStoragePlugin extends JavaPlugin {
     private JsonObject createDefaultConfig() {
         JsonObject configJson = new JsonObject();
         configJson.addProperty("_comment", "EnderStorage Configuration");
-        configJson.addProperty("enableCrafting_EnderSafe", true);
+        configJson.addProperty("enableCrafting_pocket_DimensionSafe", true);
         configJson.addProperty("enableCrafting_Ender_Chest", true);
         configJson.add("database", this.createDefaultDbConfig());
         return configJson;
@@ -165,8 +163,8 @@ public class EnderStoragePlugin extends JavaPlugin {
         JsonObject configJson = this.loadConfig();
         boolean craftingBoolean;
         boolean craftingBoolean2;
-        if (configJson.has("enableCrafting_EnderSafe")) {
-            craftingBoolean = configJson.get("enableCrafting_EnderSafe").getAsBoolean();
+        if (configJson.has("enableCrafting_pocket_DimensionSafe")) {
+            craftingBoolean = configJson.get("enableCrafting_pocket_DimensionSafe").getAsBoolean();
         } else {
             craftingBoolean = true;
         }
@@ -177,10 +175,10 @@ public class EnderStoragePlugin extends JavaPlugin {
         }
 
         if (!craftingBoolean){
-            this.removeEnderSafeRecipe("EnderSafe");
+            this.removePocket_DimensionSafeRecipe("pocket_DimensionSafe");
         }
         if (!craftingBoolean2){
-            this.removeEnderSafeRecipe("Ender_Chest");
+            this.removePocket_DimensionSafeRecipe("Ender_Chest");
         }
     }
 
@@ -191,7 +189,7 @@ public class EnderStoragePlugin extends JavaPlugin {
     }
 
 
-    private void removeEnderSafeRecipe(String blockName) {
+    private void removePocket_DimensionSafeRecipe(String blockName) {
         try {
             @SuppressWarnings("rawtypes") Class craftingPluginClass = Class.forName("com.hypixel.hytale.builtin.crafting.CraftingPlugin");
             @SuppressWarnings("unchecked") Method getCrafting = craftingPluginClass.getMethod("get");

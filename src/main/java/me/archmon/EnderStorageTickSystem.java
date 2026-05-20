@@ -1,5 +1,3 @@
-//This class was heavily influenced by the EnderChestTickSystem class of the original EnderChest mod by 01Kvothe10
-
 package me.archmon;
 
 import com.hypixel.hytale.component.ArchetypeChunk;

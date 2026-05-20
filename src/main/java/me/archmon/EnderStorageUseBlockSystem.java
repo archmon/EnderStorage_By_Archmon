@@ -1,6 +1,3 @@
-//This class was heavily influenced by the EnderChestUseBlockSystem class of the original EnderChest mod by 01Kvothe10
-//this class was heavily modified by AI
-
 package me.archmon;
 
 import com.hypixel.hytale.component.ArchetypeChunk;
@@ -50,7 +47,7 @@ public class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, U
         BlockType blockType = event.getBlockType();
 
         //allow for player to open ender safe but not automation
-        if (this.manager.isEnderSafeBlock(blockType)) {
+        if (this.manager.isPocket_DimensionSafeBlock(blockType)) {
             Player player = this.getPlayerFromEvent(id, store, event);
 
             if (player != null) {

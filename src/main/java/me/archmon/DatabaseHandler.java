@@ -1,6 +1,3 @@
-//This class was heavily influenced by the DatabaseHandler class of the original EnderChest mod by 01Kvothe10
-
-
 package me.archmon;
 
 import com.google.gson.JsonObject;
@@ -117,9 +114,9 @@ public class DatabaseHandler {
 
         String sqlStatement;
         if ("postgresql".equals(this.dbType)){
-            sqlStatement = "CREATE TABLE IF NOT EXISTS enderSafe (uuid VARCHAR(36) PRIMARY KEY, inventory_data TEXT NOT NULL, last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
+            sqlStatement = "CREATE TABLE IF NOT EXISTS pocket_DimensionSafe (uuid VARCHAR(36) PRIMARY KEY, inventory_data TEXT NOT NULL, last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
         }  else {
-            sqlStatement = "CREATE TABLE IF NOT EXISTS enderSafe (uuid TEXT PRIMARY KEY, inventory_data TEXT NOT NULL, last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
+            sqlStatement = "CREATE TABLE IF NOT EXISTS pocket_DimensionSafe (uuid TEXT PRIMARY KEY, inventory_data TEXT NOT NULL, last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
         }
 
         try (Statement tableCreation = this.connection.createStatement()){
@@ -135,7 +132,7 @@ public class DatabaseHandler {
 
         } else {
 
-            String sqlString = "SELECT inventory_data FROM enderSafe WHERE uuid = ?;";
+            String sqlString = "SELECT inventory_data FROM pocket_DimensionSafe WHERE uuid = ?;";
 
             try (PreparedStatement sqlStatement = this.connection.prepareStatement(sqlString)) {
                 sqlStatement.setString(1, uuid.toString());//if wondering why 1, look at setString
@@ -162,9 +159,9 @@ public class DatabaseHandler {
 
             String sqlStatement;
             if ("postgresql".equals(this.dbType)) {
-                sqlStatement = "INSERT INTO enderSafe (uuid, inventory_data, last_updated) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT (uuid) DO UPDATE SET inventory_data = EXCLUDED.inventory_data, last_updated = CURRENT_TIMESTAMP;";
+                sqlStatement = "INSERT INTO pocket_DimensionSafe (uuid, inventory_data, last_updated) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT (uuid) DO UPDATE SET inventory_data = EXCLUDED.inventory_data, last_updated = CURRENT_TIMESTAMP;";
             } else {
-                sqlStatement = "INSERT INTO enderSafe (uuid, inventory_data, last_updated) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(uuid) DO UPDATE SET inventory_data = excluded.inventory_data, last_updated = CURRENT_TIMESTAMP;";
+                sqlStatement = "INSERT INTO pocket_DimensionSafe (uuid, inventory_data, last_updated) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(uuid) DO UPDATE SET inventory_data = excluded.inventory_data, last_updated = CURRENT_TIMESTAMP;";
             }
 
             try (PreparedStatement preparedSQLStatement = this.connection.prepareStatement(sqlStatement)){
