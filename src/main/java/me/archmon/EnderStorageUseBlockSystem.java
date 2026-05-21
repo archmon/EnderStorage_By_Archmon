@@ -43,7 +43,7 @@ public class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, U
     ) {
         InteractionType interactionType = event.getInteractionType();
 
-        if (interactionType != InteractionType.Use && interactionType != InteractionType.Primary) {
+        if (interactionType != InteractionType.Use) {
             return;
         }
 
@@ -51,10 +51,6 @@ public class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, U
 
         // Allow player to open pocket_DimensionSafe, but do not expose a world-sided inventory.
         if (this.manager.isPocket_DimensionSafeBlock(blockType)) {
-            if (interactionType != InteractionType.Use) {
-                return;
-            }
-
             Player player = this.getPlayerFromEvent(id, store, event);
 
             if (player != null) {
@@ -86,8 +82,7 @@ public class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, U
                 BlockType blockType1 = event.getBlockType();
                 byte rotationalIndex = 0;
 
-                if (this.isUsingEnderWrench(event)
-                        && (interactionType == InteractionType.Primary || this.isCrouching(player, store))) {
+                if (this.isUsingEnderWrench(event) && this.isCrouching(player, store)) {
                     event.setCancelled(true);
                     this.manager.openEnderChestWrenchWindow(
                             player,
@@ -95,10 +90,6 @@ public class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, U
                             targetedBlock.y,
                             targetedBlock.z
                     );
-                    return;
-                }
-
-                if (interactionType != InteractionType.Use) {
                     return;
                 }
 

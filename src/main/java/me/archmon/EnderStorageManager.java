@@ -185,10 +185,12 @@ public class EnderStorageManager {
         return this.getEnderChestContainer(DEFAULT_ENDER_CHEST_COLOR_CODE, null);
     }
 
+    //this is to be used for other mods to hook into the enderchest inventory
     public ItemContainer getEnderChestInventoryForAutomation() {
         return this.getSharedEnderChestContainer();
     }
 
+    //this is to be used for other mods to hook into the enderchest inventory
     public void saveEnderChestInventory() {
         ItemContainer itemContainer = this.getSharedEnderChestContainer();
         this.saveEnderChestContainer(DEFAULT_ENDER_CHEST_COLOR_CODE, null, itemContainer);
@@ -224,6 +226,7 @@ public class EnderStorageManager {
         }
     }
 
+    //not sure when this was added, but it's to be used for other mods to hook into the pocket dimension safe inventory I think
     public ItemContainer removePocketDimensionSafeAndReturnContents(int posX, int posY, int posZ) {
         String locationKey = this.createPocketDimensionSafeLocationKey(posX, posY, posZ);
         ItemContainer itemContainer = this.loadPocketDimensionSafeContainer(locationKey);

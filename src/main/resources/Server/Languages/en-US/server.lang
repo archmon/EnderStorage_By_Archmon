@@ -3,4 +3,4 @@ items.pocket_DimensionSafe.description=A safe containing a pocket dimension wher
 items.Ender_Chest.name=Ender Chest
 items.Ender_Chest.description=A chest that matches the inventory of other chests with the same color code.
 items.EnderWrench.name=Ender Wrench
-items.EnderWrench.description=A wrench that can be used to change the color code of the Ender Chest.
+items.EnderWrench.description=A wrench that while held will allow you to open the dialog for changing the color of an Ender Chest or changing from public to private networks and back.

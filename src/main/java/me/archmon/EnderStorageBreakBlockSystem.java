@@ -162,7 +162,7 @@ public class EnderStorageBreakBlockSystem extends EntityEventSystem<EntityStore,
     ) {
         Vector3d dropPosition = new Vector3d(
                 targetBlock.x + 0.5d,
-                targetBlock.y + 1.25d,
+                targetBlock.y + 1.25d,//note to self, this was upped cause items were failing to spawn from old ai methods before switching to codex
                 targetBlock.z + 0.5d
         );
 
