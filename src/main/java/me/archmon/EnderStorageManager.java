@@ -127,11 +127,6 @@ public class EnderStorageManager {
         EnderChestBlockConfig blockConfig = this.getOrCreateEnderChestBlockConfig(posX, posY, posZ);
         ItemContainer itemContainer = this.getEnderChestContainer(blockConfig.colorCode, blockConfig.ownerUuid);
 
-        if (blockConfig.ownerUuid != null) {
-            this.sendPlayerMessage(player, "Opening private Ender_Chest network " + blockConfig.colorCode
-                    + " owned by " + blockConfig.ownerUuid + ".");
-        }
-
         this.openContainerForPlayer(
                 player,
                 itemContainer,
@@ -163,7 +158,7 @@ public class EnderStorageManager {
             lockContainer.setItemStackForSlot((short) 0, new ItemStack(ADAMANTITE_INGOT_ITEM_ID, 1));
         }
 
-        String ownerDescription = this.describeEnderChestOwner(player, blockConfig.ownerUuid);
+        String ownerDescription = this.describeEnderChestOwner(player, blockConfig);
 
         this.openEnderChestWrenchPage(
                 player,
@@ -394,16 +389,20 @@ public class EnderStorageManager {
         );
     }
 
-    private String describeEnderChestOwner(Player player, UUID ownerUuid) {
-        if (ownerUuid == null) {
+    private String describeEnderChestOwner(Player player, EnderChestBlockConfig blockConfig) {
+        if (blockConfig == null || blockConfig.ownerUuid == null) {
             return "Public network";
         }
 
-        if (player != null && ownerUuid.equals(player.getUuid())) {
-            return player.getDisplayName();
+        if (blockConfig.ownerName != null && !blockConfig.ownerName.isBlank()) {
+            return blockConfig.ownerName;
         }
 
-        return "Private network";
+        if (player != null && blockConfig.ownerUuid.equals(player.getUuid())) {
+            return this.getPlayerDisplayName(player);
+        }
+
+        return "Unknown owner";
     }
 
     private boolean hasAdamantiteInLockSlot(ItemContainer lockContainer) {
@@ -460,15 +459,19 @@ public class EnderStorageManager {
             DatabaseHandler.EnderChestBlockConfig savedConfig = this.dbJsonObject.getEnderChestBlockConfig(locationKey);
 
             if (savedConfig != null) {
-                return new EnderChestBlockConfig(this.normalizeColorCode(savedConfig.colorCode), savedConfig.ownerUuid);
+                return new EnderChestBlockConfig(
+                        this.normalizeColorCode(savedConfig.colorCode),
+                        savedConfig.ownerUuid,
+                        savedConfig.ownerName
+                );
             }
 
-            this.dbJsonObject.saveEnderChestBlockConfig(locationKey, DEFAULT_ENDER_CHEST_COLOR_CODE, null);
+            this.dbJsonObject.saveEnderChestBlockConfig(locationKey, DEFAULT_ENDER_CHEST_COLOR_CODE, null, null);
         } catch (Exception errCatch) {
             System.err.println("[EnderStorage] Failed to load Ender_Chest config for " + locationKey + ": " + errCatch.getMessage());
         }
 
-        return new EnderChestBlockConfig(DEFAULT_ENDER_CHEST_COLOR_CODE, null);
+        return new EnderChestBlockConfig(DEFAULT_ENDER_CHEST_COLOR_CODE, null, null);
     }
 
     private void saveEnderChestBlockConfig(int posX, int posY, int posZ, EnderChestBlockConfig blockConfig) {
@@ -482,7 +485,8 @@ public class EnderStorageManager {
             this.dbJsonObject.saveEnderChestBlockConfig(
                     locationKey,
                     this.normalizeColorCode(blockConfig.colorCode),
-                    blockConfig.ownerUuid
+                    blockConfig.ownerUuid,
+                    blockConfig.ownerName
             );
         } catch (Exception errCatch) {
             System.err.println("[EnderStorage] Failed to save Ender_Chest config for " + locationKey + ": " + errCatch.getMessage());
@@ -501,14 +505,14 @@ public class EnderStorageManager {
         String colorCode = this.normalizeColorCode(previousConfig.colorCode);
 
         if (lockItem == null || lockItem.isEmpty()) {
-            this.saveEnderChestBlockConfig(posX, posY, posZ, new EnderChestBlockConfig(colorCode, null));
+            this.saveEnderChestBlockConfig(posX, posY, posZ, new EnderChestBlockConfig(colorCode, null, null));
             this.sendPlayerMessage(player, "Ender_Chest set to public network " + colorCode + ".");
             return;
         }
 
         if (!ADAMANTITE_INGOT_ITEM_ID.equals(lockItem.getItemId())) {
             this.returnItemToPlayer(player, lockItem);
-            this.saveEnderChestBlockConfig(posX, posY, posZ, new EnderChestBlockConfig(colorCode, null));
+            this.saveEnderChestBlockConfig(posX, posY, posZ, new EnderChestBlockConfig(colorCode, null, null));
             this.sendPlayerMessage(player, "Only an adamantite ingot can lock an Ender_Chest. Invalid item returned.");
             return;
         }
@@ -518,8 +522,31 @@ public class EnderStorageManager {
         }
 
         UUID ownerUuid = previousConfig.ownerUuid == null ? player.getUuid() : previousConfig.ownerUuid;
-        this.saveEnderChestBlockConfig(posX, posY, posZ, new EnderChestBlockConfig(colorCode, ownerUuid));
-        this.sendPlayerMessage(player, "Ender_Chest set to private network " + colorCode + " owned by " + ownerUuid + ".");
+        String ownerName = this.resolveOwnerName(player, previousConfig, ownerUuid);
+        this.saveEnderChestBlockConfig(posX, posY, posZ, new EnderChestBlockConfig(colorCode, ownerUuid, ownerName));
+        this.sendPlayerMessage(player, "Ender_Chest set to private network " + colorCode + " owned by " + ownerName + ".");
+    }
+
+    private String resolveOwnerName(Player player, EnderChestBlockConfig previousConfig, UUID ownerUuid) {
+        if (previousConfig.ownerName != null && !previousConfig.ownerName.isBlank()) {
+            return previousConfig.ownerName;
+        }
+
+        if (player != null && ownerUuid != null && ownerUuid.equals(player.getUuid())) {
+            return this.getPlayerDisplayName(player);
+        }
+
+        return "Unknown owner";
+    }
+
+    private String getPlayerDisplayName(Player player) {
+        String displayName = player.getDisplayName();
+
+        if (displayName == null || displayName.isBlank()) {
+            return "Unknown owner";
+        }
+
+        return displayName;
     }
 
     private void returnItemToPlayer(Player player, ItemStack itemStack) {
@@ -841,10 +868,12 @@ public class EnderStorageManager {
     private static class EnderChestBlockConfig {
         private final String colorCode;
         private final UUID ownerUuid;
+        private final String ownerName;
 
-        private EnderChestBlockConfig(String colorCode, UUID ownerUuid) {
+        private EnderChestBlockConfig(String colorCode, UUID ownerUuid, String ownerName) {
             this.colorCode = colorCode;
             this.ownerUuid = ownerUuid;
+            this.ownerName = ownerName;
         }
     }
 

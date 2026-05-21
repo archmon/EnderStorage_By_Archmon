@@ -55,7 +55,7 @@ $C.@PageOverlay {
       }
 
       Group {
-        LayoutMode: Left;
+        LayoutMode: Center;
         Anchor: (Bottom: 18);
 
         Group {
@@ -247,7 +247,7 @@ $C.@PageOverlay {
             VerticalAlignment: Center,
             Wrap: true
           );
-          Anchor: (Top: 8);
+          Anchor: (Top: 8, Width: 300);
         }
       }
 

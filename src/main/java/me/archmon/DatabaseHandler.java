@@ -96,6 +96,7 @@ public class DatabaseHandler {
                         location_key VARCHAR(128) PRIMARY KEY,
                         color_code VARCHAR(16) NOT NULL,
                         owner_uuid VARCHAR(36) NULL,
+                        owner_name VARCHAR(64) NULL,
                         last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     );
                     """;
@@ -124,6 +125,7 @@ public class DatabaseHandler {
                         location_key TEXT PRIMARY KEY,
                         color_code TEXT NOT NULL,
                         owner_uuid TEXT NULL,
+                        owner_name TEXT NULL,
                         last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     );
                     """;
@@ -143,6 +145,8 @@ public class DatabaseHandler {
             statement.execute(createEnderChestBlockTable);
             statement.execute(createPocketDimensionSafeTable);
         }
+
+        this.ensureEnderChestBlockOwnerNameColumn();
     }
 
     public synchronized String getEnderChestInventory(String colorCode, UUID playerUuid) throws SQLException {
@@ -213,7 +217,7 @@ public class DatabaseHandler {
     public synchronized EnderChestBlockConfig getEnderChestBlockConfig(String locationKey) throws SQLException {
         this.requireConnection();
 
-        String sql = "SELECT color_code, owner_uuid FROM " + ENDER_CHEST_BLOCK_TABLE + " WHERE location_key = ?;";
+        String sql = "SELECT color_code, owner_uuid, owner_name FROM " + ENDER_CHEST_BLOCK_TABLE + " WHERE location_key = ?;";
 
         try (PreparedStatement statement = this.connection.prepareStatement(sql)) {
             statement.setString(1, locationKey);
@@ -222,7 +226,7 @@ public class DatabaseHandler {
                 if (resultSet.next()) {
                     String ownerUuidValue = resultSet.getString("owner_uuid");
                     UUID ownerUuid = ownerUuidValue == null ? null : UUID.fromString(ownerUuidValue);
-                    return new EnderChestBlockConfig(resultSet.getString("color_code"), ownerUuid);
+                    return new EnderChestBlockConfig(resultSet.getString("color_code"), ownerUuid, resultSet.getString("owner_name"));
                 }
             }
         }
@@ -230,28 +234,30 @@ public class DatabaseHandler {
         return null;
     }
 
-    public synchronized void saveEnderChestBlockConfig(String locationKey, String colorCode, UUID ownerUuid) throws SQLException {
+    public synchronized void saveEnderChestBlockConfig(String locationKey, String colorCode, UUID ownerUuid, String ownerName) throws SQLException {
         this.requireConnection();
 
         String sql;
         if ("postgresql".equals(this.dbType)) {
             sql = """
-                    INSERT INTO ender_chest_block (location_key, color_code, owner_uuid, last_updated)
-                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                    INSERT INTO ender_chest_block (location_key, color_code, owner_uuid, owner_name, last_updated)
+                    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
                     ON CONFLICT (location_key)
                     DO UPDATE SET
                         color_code = EXCLUDED.color_code,
                         owner_uuid = EXCLUDED.owner_uuid,
+                        owner_name = EXCLUDED.owner_name,
                         last_updated = CURRENT_TIMESTAMP;
                     """;
         } else {
             sql = """
-                    INSERT INTO ender_chest_block (location_key, color_code, owner_uuid, last_updated)
-                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                    INSERT INTO ender_chest_block (location_key, color_code, owner_uuid, owner_name, last_updated)
+                    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
                     ON CONFLICT(location_key)
                     DO UPDATE SET
                         color_code = excluded.color_code,
                         owner_uuid = excluded.owner_uuid,
+                        owner_name = excluded.owner_name,
                         last_updated = CURRENT_TIMESTAMP;
                     """;
         }
@@ -264,6 +270,12 @@ public class DatabaseHandler {
                 statement.setNull(3, Types.VARCHAR);
             } else {
                 statement.setString(3, ownerUuid.toString());
+            }
+
+            if (ownerName == null || ownerName.isBlank()) {
+                statement.setNull(4, Types.VARCHAR);
+            } else {
+                statement.setString(4, ownerName);
             }
 
             statement.executeUpdate();
@@ -381,6 +393,30 @@ public class DatabaseHandler {
         }
     }
 
+    private void ensureEnderChestBlockOwnerNameColumn() throws SQLException {
+        if ("postgresql".equals(this.dbType)) {
+            try (Statement statement = this.connection.createStatement()) {
+                statement.execute("ALTER TABLE " + ENDER_CHEST_BLOCK_TABLE + " ADD COLUMN IF NOT EXISTS owner_name VARCHAR(64) NULL;");
+            }
+            return;
+        }
+
+        String pragmaSql = "PRAGMA table_info(" + ENDER_CHEST_BLOCK_TABLE + ");";
+
+        try (Statement statement = this.connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(pragmaSql)) {
+            while (resultSet.next()) {
+                if ("owner_name".equalsIgnoreCase(resultSet.getString("name"))) {
+                    return;
+                }
+            }
+        }
+
+        try (Statement statement = this.connection.createStatement()) {
+            statement.execute("ALTER TABLE " + ENDER_CHEST_BLOCK_TABLE + " ADD COLUMN owner_name TEXT NULL;");
+        }
+    }
+
     private void requireConnection() throws SQLException {
         if (this.connection == null || this.connection.isClosed()) {
             throw new SQLException("Not connected to database.");
@@ -417,10 +453,12 @@ public class DatabaseHandler {
     public static class EnderChestBlockConfig {
         public final String colorCode;
         public final UUID ownerUuid;
+        public final String ownerName;
 
-        public EnderChestBlockConfig(String colorCode, UUID ownerUuid) {
+        public EnderChestBlockConfig(String colorCode, UUID ownerUuid, String ownerName) {
             this.colorCode = colorCode;
             this.ownerUuid = ownerUuid;
+            this.ownerName = ownerName;
         }
     }
 }
