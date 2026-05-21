@@ -8,6 +8,7 @@ import java.util.UUID;
 
 public class DatabaseHandler {
     private static final String ENDER_CHEST_TABLE = "ender_chest";
+    private static final String ENDER_CHEST_BLOCK_TABLE = "ender_chest_block";
     private static final String POCKET_DIMENSION_SAFE_TABLE = "pocket_dimension_safe";
 
     private Connection connection;
@@ -76,6 +77,7 @@ public class DatabaseHandler {
 
     private void createTables() throws SQLException {
         String createEnderChestTable;
+        String createEnderChestBlockTable;
         String createPocketDimensionSafeTable;
 
         if ("postgresql".equals(this.dbType)) {
@@ -86,6 +88,15 @@ public class DatabaseHandler {
                         player_uuid VARCHAR(36) NULL,
                         inventory_data TEXT NOT NULL,
                         last_accessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    );
+                    """;
+
+            createEnderChestBlockTable = """
+                    CREATE TABLE IF NOT EXISTS ender_chest_block (
+                        location_key VARCHAR(128) PRIMARY KEY,
+                        color_code VARCHAR(16) NOT NULL,
+                        owner_uuid VARCHAR(36) NULL,
+                        last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     );
                     """;
 
@@ -108,6 +119,15 @@ public class DatabaseHandler {
                     );
                     """;
 
+            createEnderChestBlockTable = """
+                    CREATE TABLE IF NOT EXISTS ender_chest_block (
+                        location_key TEXT PRIMARY KEY,
+                        color_code TEXT NOT NULL,
+                        owner_uuid TEXT NULL,
+                        last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    );
+                    """;
+
             createPocketDimensionSafeTable = """
                     CREATE TABLE IF NOT EXISTS pocket_dimension_safe (
                         location_key TEXT PRIMARY KEY,
@@ -120,74 +140,146 @@ public class DatabaseHandler {
 
         try (Statement statement = this.connection.createStatement()) {
             statement.execute(createEnderChestTable);
+            statement.execute(createEnderChestBlockTable);
             statement.execute(createPocketDimensionSafeTable);
         }
     }
 
     public synchronized String getEnderChestInventory(String colorCode, UUID playerUuid) throws SQLException {
-    this.requireConnection();
+        this.requireConnection();
 
-    String networkKey = this.createEnderChestNetworkKey(colorCode, playerUuid);
-    String sql = "SELECT inventory_data FROM " + ENDER_CHEST_TABLE + " WHERE network_key = ?;";
+        String networkKey = this.createEnderChestNetworkKey(colorCode, playerUuid);
+        String sql = "SELECT inventory_data FROM " + ENDER_CHEST_TABLE + " WHERE network_key = ?;";
 
-    try (PreparedStatement statement = this.connection.prepareStatement(sql)) {
-        statement.setString(1, networkKey);
+        try (PreparedStatement statement = this.connection.prepareStatement(sql)) {
+            statement.setString(1, networkKey);
 
-        try (ResultSet resultSet = statement.executeQuery()) {
-            if (resultSet.next()) {
-                this.touchEnderChest(networkKey);
-                return resultSet.getString("inventory_data");
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    this.touchEnderChest(networkKey);
+                    return resultSet.getString("inventory_data");
+                }
             }
         }
+
+        return null;
     }
 
-    return null;
-}
+    public synchronized void saveEnderChestInventory(String colorCode, UUID playerUuid, String inventoryData) throws SQLException {
+        this.requireConnection();
 
-public synchronized void saveEnderChestInventory(String colorCode, UUID playerUuid, String inventoryData) throws SQLException {
-    this.requireConnection();
+        String networkKey = this.createEnderChestNetworkKey(colorCode, playerUuid);
 
-    String networkKey = this.createEnderChestNetworkKey(colorCode, playerUuid);
-
-    String sql;
-    if ("postgresql".equals(this.dbType)) {
-        sql = """
-                INSERT INTO ender_chest (network_key, color_code, player_uuid, inventory_data, last_accessed)
-                VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
-                ON CONFLICT (network_key)
-                DO UPDATE SET
-                    color_code = EXCLUDED.color_code,
-                    player_uuid = EXCLUDED.player_uuid,
-                    inventory_data = EXCLUDED.inventory_data,
-                    last_accessed = CURRENT_TIMESTAMP;
-                """;
-    } else {
-        sql = """
-                INSERT INTO ender_chest (network_key, color_code, player_uuid, inventory_data, last_accessed)
-                VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
-                ON CONFLICT(network_key)
-                DO UPDATE SET
-                    color_code = excluded.color_code,
-                    player_uuid = excluded.player_uuid,
-                    inventory_data = excluded.inventory_data,
-                    last_accessed = CURRENT_TIMESTAMP;
-                """;
-    }
-
-    try (PreparedStatement statement = this.connection.prepareStatement(sql)) {
-        statement.setString(1, networkKey);
-        statement.setString(2, colorCode);
-
-        if (playerUuid == null) {
-            statement.setNull(3, Types.VARCHAR);
+        String sql;
+        if ("postgresql".equals(this.dbType)) {
+            sql = """
+                    INSERT INTO ender_chest (network_key, color_code, player_uuid, inventory_data, last_accessed)
+                    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    ON CONFLICT (network_key)
+                    DO UPDATE SET
+                        color_code = EXCLUDED.color_code,
+                        player_uuid = EXCLUDED.player_uuid,
+                        inventory_data = EXCLUDED.inventory_data,
+                        last_accessed = CURRENT_TIMESTAMP;
+                    """;
         } else {
-            statement.setString(3, playerUuid.toString());
+            sql = """
+                    INSERT INTO ender_chest (network_key, color_code, player_uuid, inventory_data, last_accessed)
+                    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    ON CONFLICT(network_key)
+                    DO UPDATE SET
+                        color_code = excluded.color_code,
+                        player_uuid = excluded.player_uuid,
+                        inventory_data = excluded.inventory_data,
+                        last_accessed = CURRENT_TIMESTAMP;
+                    """;
         }
 
-        statement.setString(4, inventoryData);
-        statement.executeUpdate();
+        try (PreparedStatement statement = this.connection.prepareStatement(sql)) {
+            statement.setString(1, networkKey);
+            statement.setString(2, colorCode);
+
+            if (playerUuid == null) {
+                statement.setNull(3, Types.VARCHAR);
+            } else {
+                statement.setString(3, playerUuid.toString());
+            }
+
+            statement.setString(4, inventoryData);
+            statement.executeUpdate();
+        }
     }
-}
+
+    public synchronized EnderChestBlockConfig getEnderChestBlockConfig(String locationKey) throws SQLException {
+        this.requireConnection();
+
+        String sql = "SELECT color_code, owner_uuid FROM " + ENDER_CHEST_BLOCK_TABLE + " WHERE location_key = ?;";
+
+        try (PreparedStatement statement = this.connection.prepareStatement(sql)) {
+            statement.setString(1, locationKey);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    String ownerUuidValue = resultSet.getString("owner_uuid");
+                    UUID ownerUuid = ownerUuidValue == null ? null : UUID.fromString(ownerUuidValue);
+                    return new EnderChestBlockConfig(resultSet.getString("color_code"), ownerUuid);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public synchronized void saveEnderChestBlockConfig(String locationKey, String colorCode, UUID ownerUuid) throws SQLException {
+        this.requireConnection();
+
+        String sql;
+        if ("postgresql".equals(this.dbType)) {
+            sql = """
+                    INSERT INTO ender_chest_block (location_key, color_code, owner_uuid, last_updated)
+                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                    ON CONFLICT (location_key)
+                    DO UPDATE SET
+                        color_code = EXCLUDED.color_code,
+                        owner_uuid = EXCLUDED.owner_uuid,
+                        last_updated = CURRENT_TIMESTAMP;
+                    """;
+        } else {
+            sql = """
+                    INSERT INTO ender_chest_block (location_key, color_code, owner_uuid, last_updated)
+                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                    ON CONFLICT(location_key)
+                    DO UPDATE SET
+                        color_code = excluded.color_code,
+                        owner_uuid = excluded.owner_uuid,
+                        last_updated = CURRENT_TIMESTAMP;
+                    """;
+        }
+
+        try (PreparedStatement statement = this.connection.prepareStatement(sql)) {
+            statement.setString(1, locationKey);
+            statement.setString(2, colorCode);
+
+            if (ownerUuid == null) {
+                statement.setNull(3, Types.VARCHAR);
+            } else {
+                statement.setString(3, ownerUuid.toString());
+            }
+
+            statement.executeUpdate();
+        }
+    }
+
+    public synchronized void deleteEnderChestBlockConfig(String locationKey) throws SQLException {
+        this.requireConnection();
+
+        String sql = "DELETE FROM " + ENDER_CHEST_BLOCK_TABLE + " WHERE location_key = ?;";
+
+        try (PreparedStatement statement = this.connection.prepareStatement(sql)) {
+            statement.setString(1, locationKey);
+            statement.executeUpdate();
+        }
+    }
 
     public synchronized String getPocketDimensionSafeInventory(String locationKey) throws SQLException {
         this.requireConnection();
@@ -320,5 +412,15 @@ public synchronized void saveEnderChestInventory(String colorCode, UUID playerUu
         }
 
         return "player:" + playerUuid + ":" + colorCode;
+    }
+
+    public static class EnderChestBlockConfig {
+        public final String colorCode;
+        public final UUID ownerUuid;
+
+        public EnderChestBlockConfig(String colorCode, UUID ownerUuid) {
+            this.colorCode = colorCode;
+            this.ownerUuid = ownerUuid;
+        }
     }
 }

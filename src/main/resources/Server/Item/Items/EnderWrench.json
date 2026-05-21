@@ -43,7 +43,7 @@
     "Compatible": true
   },
   "Interactions": {
-    "Primary": "Axe_Attack"
+    "Primary": "EnderWrench_Primary"
   },
   "InteractionVars": {
     "Axe_Swing_Down_Left_Effect": {

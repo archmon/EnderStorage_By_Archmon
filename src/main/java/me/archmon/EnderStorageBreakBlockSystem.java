@@ -9,6 +9,7 @@ import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.EntityEventSystem;
 import com.hypixel.hytale.math.vector.Vector3i;
+import com.hypixel.hytale.protocol.GameMode;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.server.core.entity.entities.Player;
@@ -51,6 +52,39 @@ public class EnderStorageBreakBlockSystem extends EntityEventSystem<EntityStore,
     ) {
         BlockType blockType = event.getBlockType();
 
+        if (this.manager.isEnderChestBlock(blockType)) {
+            Player player = this.getPlayerFromEvent(id, store);
+            Vector3i targetBlock = event.getTargetBlock();
+
+            List<ItemStack> itemStacks = new ArrayList<>();
+
+            if (!this.isCreative(player)) {
+                itemStacks.add(this.manager.createEnderChestItemStack());
+            }
+
+            ItemStack lockItem = this.manager.getEnderChestBlockLockItem(
+                    targetBlock.x,
+                    targetBlock.y,
+                    targetBlock.z
+            );
+
+            if (lockItem != null) {
+                itemStacks.add(lockItem);
+            }
+
+            if (!itemStacks.isEmpty() && !this.dropItemStacks(commandBuffer, itemStacks, targetBlock)) {
+                event.setCancelled(true);
+                return;
+            }
+
+            this.manager.deleteEnderChestBlockConfig(
+                    targetBlock.x,
+                    targetBlock.y,
+                    targetBlock.z
+            );
+            return;
+        }
+
         if (!this.manager.isPocket_DimensionSafeBlock(blockType)) {
             return;
         }
@@ -85,8 +119,12 @@ public class EnderStorageBreakBlockSystem extends EntityEventSystem<EntityStore,
 
         List<ItemStack> itemStacks = this.getContainerItemStacks(itemContainer);
 
+        if (!this.isCreative(player)) {
+            itemStacks.add(this.manager.createPocketDimensionSafeItemStack());
+        }
+
         if (!itemStacks.isEmpty()) {
-            boolean droppedContents = this.dropPocketDimensionSafeContents(commandBuffer, itemStacks, targetBlock);
+            boolean droppedContents = this.dropItemStacks(commandBuffer, itemStacks, targetBlock);
 
             if (!droppedContents) {
                 event.setCancelled(true);
@@ -117,7 +155,7 @@ public class EnderStorageBreakBlockSystem extends EntityEventSystem<EntityStore,
         return itemStacks;
     }
 
-    private boolean dropPocketDimensionSafeContents(
+    private boolean dropItemStacks(
             CommandBuffer<EntityStore> commandBuffer,
             List<ItemStack> itemStacks,
             Vector3i targetBlock
@@ -138,14 +176,14 @@ public class EnderStorageBreakBlockSystem extends EntityEventSystem<EntityStore,
         );
 
         if (dropHolders.length != itemStacks.size()) {
-            System.err.println("[EnderStorage] Failed to generate all safe item drops at " + dropPosition
+            System.err.println("[EnderStorage] Failed to generate all item drops at " + dropPosition
                     + ". Expected " + itemStacks.size() + ", generated " + dropHolders.length + ".");
             return false;
         }
 
         commandBuffer.addEntities(dropHolders, AddReason.SPAWN);
 
-        System.out.println("[EnderStorage] Dropped " + dropHolders.length + " safe item stacks at " + dropPosition);
+        System.out.println("[EnderStorage] Dropped " + dropHolders.length + " item stacks at " + dropPosition);
         return true;
     }
 
@@ -157,5 +195,9 @@ public class EnderStorageBreakBlockSystem extends EntityEventSystem<EntityStore,
         } catch (Exception ignored) {
             return null;
         }
+    }
+
+    private boolean isCreative(Player player) {
+        return player != null && player.getGameMode() == GameMode.Creative;
     }
 }

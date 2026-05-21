@@ -8,10 +8,13 @@ import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.EntityEventSystem;
 import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.protocol.InteractionType;
+import com.hypixel.hytale.protocol.MovementStates;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.server.core.entity.InteractionContext;
 import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.entity.movement.MovementStatesComponent;
 import com.hypixel.hytale.server.core.event.events.ecs.UseBlockEvent;
+import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.jspecify.annotations.NonNull;
 
@@ -40,7 +43,7 @@ public class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, U
     ) {
         InteractionType interactionType = event.getInteractionType();
 
-        if (interactionType != InteractionType.Use) {
+        if (interactionType != InteractionType.Use && interactionType != InteractionType.Primary) {
             return;
         }
 
@@ -48,6 +51,10 @@ public class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, U
 
         // Allow player to open pocket_DimensionSafe, but do not expose a world-sided inventory.
         if (this.manager.isPocket_DimensionSafeBlock(blockType)) {
+            if (interactionType != InteractionType.Use) {
+                return;
+            }
+
             Player player = this.getPlayerFromEvent(id, store, event);
 
             if (player != null) {
@@ -78,6 +85,22 @@ public class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, U
                 Vector3i targetedBlock = event.getTargetBlock();
                 BlockType blockType1 = event.getBlockType();
                 byte rotationalIndex = 0;
+
+                if (this.isUsingEnderWrench(event)
+                        && (interactionType == InteractionType.Primary || this.isCrouching(player, store))) {
+                    event.setCancelled(true);
+                    this.manager.openEnderChestWrenchWindow(
+                            player,
+                            targetedBlock.x,
+                            targetedBlock.y,
+                            targetedBlock.z
+                    );
+                    return;
+                }
+
+                if (interactionType != InteractionType.Use) {
+                    return;
+                }
 
                 event.setCancelled(true);
 
@@ -113,5 +136,40 @@ public class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, U
         }
 
         return player;
+    }
+
+    private boolean isUsingEnderWrench(UseBlockEvent.Pre event) {
+        try {
+            InteractionContext interactionContext = event.getContext();
+            ItemStack heldItem = interactionContext.getHeldItem();
+            return this.manager.isEnderWrenchItem(heldItem);
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    private boolean isCrouching(Player player, Store<EntityStore> store) {
+        try {
+            @SuppressWarnings("rawtypes") Ref playerReference = player.getReference();
+
+            if (playerReference == null) {
+                return false;
+            }
+
+            //noinspection unchecked
+            MovementStatesComponent movementStatesComponent = store.getComponent(
+                    playerReference,
+                    MovementStatesComponent.getComponentType()
+            );
+
+            if (movementStatesComponent == null) {
+                return false;
+            }
+
+            MovementStates movementStates = movementStatesComponent.getMovementStates();
+            return movementStates != null && (movementStates.crouching || movementStates.forcedCrouching);
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 }

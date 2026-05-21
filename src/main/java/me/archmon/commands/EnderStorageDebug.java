@@ -17,9 +17,9 @@ public class EnderStorageDebug extends CommandBase {
     protected void executeSync(@NonNull CommandContext ctx) {
         ctx.sendMessage(Message.raw("EnderStorage debug status:"));
         ctx.sendMessage(Message.raw("- pocket_DimensionSafe uses coordinate-keyed database storage."));
+        ctx.sendMessage(Message.raw("- Ender_Chest instances use coordinate-keyed color/private network config."));
         ctx.sendMessage(Message.raw("- Ender_Chest default public network is public:0:0:0."));
-        ctx.sendMessage(Message.raw("- placement ownership hook is pending."));
-        ctx.sendMessage(Message.raw("- block destroy/drop cleanup hook is pending."));
-        ctx.sendMessage(Message.raw("- server operator bypass is pending."));
+        ctx.sendMessage(Message.raw("- EnderWrench crouch-use opens the current one-slot private lock window."));
+        ctx.sendMessage(Message.raw("- pocket_DimensionSafe owner checks support enderstorage.admin and enderstorage.safe.bypass."));
     }
 }

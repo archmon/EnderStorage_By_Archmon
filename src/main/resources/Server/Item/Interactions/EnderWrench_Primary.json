@@ -1,0 +1,11 @@
+{
+  "Type": "Simple",
+  "Effects": {
+    "ItemAnimationId": "SwingDownLeft"
+  },
+  "RunTime": 0.244,
+  "Next": {
+    "Type": "UseBlock",
+    "Failed": "Axe_Attack"
+  }
+}

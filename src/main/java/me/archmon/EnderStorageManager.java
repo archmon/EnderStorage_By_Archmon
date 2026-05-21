@@ -16,6 +16,7 @@ import com.hypixel.hytale.server.core.entity.entities.player.windows.Window;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
 import com.hypixel.hytale.server.core.inventory.container.SimpleItemContainer;
+import com.hypixel.hytale.server.core.inventory.container.filter.FilterActionType;
 import com.hypixel.hytale.server.core.util.BsonUtil;
 import org.bson.BsonDocument;
 
@@ -28,7 +29,11 @@ import java.util.concurrent.ConcurrentHashMap;
 public class EnderStorageManager {
 
     private static final short INVENTORY_SLOT_COUNT = 54;
+    private static final short ENDER_CHEST_LOCK_SLOT_COUNT = 1;
     private static final String DEFAULT_ENDER_CHEST_COLOR_CODE = "0:0:0";
+    private static final String ENDER_CHEST_ITEM_ID = "Ender_Chest";
+    private static final String ENDER_WRENCH_ITEM_ID = "EnderWrench";
+    private static final String ADAMANTITE_INGOT_ITEM_ID = "Ingredient_Bar_Adamantite";
 
     private final Map<String, ItemContainer> loadedPocketDimensionSafeContainers = new ConcurrentHashMap<>();
     private final Map<String, ItemContainer> loadedEnderChestContainers = new ConcurrentHashMap<>();
@@ -64,6 +69,16 @@ public class EnderStorageManager {
         return blockType != null
                 && blockType.getId() != null
                 && blockType.getId().contains("pocket_DimensionSafe");
+    }
+
+    public boolean isEnderWrenchItem(ItemStack itemStack) {
+        return itemStack != null
+                && !itemStack.isEmpty()
+                && ENDER_WRENCH_ITEM_ID.equals(itemStack.getItemId());
+    }
+
+    public ItemStack createEnderChestItemStack() {
+        return new ItemStack(ENDER_CHEST_ITEM_ID, 1);
     }
 
     private void sendPlayerMessage(Player player, String message) {
@@ -109,9 +124,13 @@ public class EnderStorageManager {
             return;
         }
 
-        String colorCode = DEFAULT_ENDER_CHEST_COLOR_CODE;
-        UUID playerUuid = null;
-        ItemContainer itemContainer = this.getEnderChestContainer(colorCode, playerUuid);
+        EnderChestBlockConfig blockConfig = this.getOrCreateEnderChestBlockConfig(posX, posY, posZ);
+        ItemContainer itemContainer = this.getEnderChestContainer(blockConfig.colorCode, blockConfig.ownerUuid);
+
+        if (blockConfig.ownerUuid != null) {
+            this.sendPlayerMessage(player, "Opening private Ender_Chest network " + blockConfig.colorCode
+                    + " owned by " + blockConfig.ownerUuid + ".");
+        }
 
         this.openContainerForPlayer(
                 player,
@@ -122,7 +141,43 @@ public class EnderStorageManager {
                 rotationIndex,
                 blockType,
                 true,
-                () -> this.saveEnderChestContainer(colorCode, playerUuid, itemContainer)
+                () -> this.saveEnderChestContainer(blockConfig.colorCode, blockConfig.ownerUuid, itemContainer)
+        );
+    }
+
+    public void openEnderChestWrenchWindow(Player player, int posX, int posY, int posZ) {
+        if (player == null) {
+            return;
+        }
+
+        EnderChestBlockConfig blockConfig = this.getOrCreateEnderChestBlockConfig(posX, posY, posZ);
+        SimpleItemContainer lockContainer = new SimpleItemContainer(ENDER_CHEST_LOCK_SLOT_COUNT);
+        lockContainer.setSlotFilter(
+                FilterActionType.ADD,
+                (short) 0,
+                (actionType, itemContainer, slot, itemStack) -> this.isAdamantiteIngot(itemStack)
+                        && (itemContainer.getItemStack(slot) == null || itemContainer.getItemStack(slot).isEmpty())
+        );
+
+        if (blockConfig.ownerUuid != null) {
+            lockContainer.setItemStackForSlot((short) 0, new ItemStack(ADAMANTITE_INGOT_ITEM_ID, 1));
+        }
+
+        String ownerDescription = blockConfig.ownerUuid == null ? "public" : blockConfig.ownerUuid.toString();
+        this.sendPlayerMessage(player, "Ender_Chest network: " + blockConfig.colorCode + " owner: " + ownerDescription + ".");
+        this.sendPlayerMessage(player, "Place 1 adamantite ingot in this window to make this block use your private network.");
+        this.sendPlayerMessage(player, "Remove the adamantite ingot to return this block to the public network.");
+
+        this.openContainerForPlayer(
+                player,
+                lockContainer,
+                posX,
+                posY,
+                posZ,
+                0,
+                null,
+                false,
+                () -> this.applyEnderChestLockWindow(player, posX, posY, posZ, blockConfig, lockContainer)
         );
     }
 
@@ -137,6 +192,36 @@ public class EnderStorageManager {
     public void saveEnderChestInventory() {
         ItemContainer itemContainer = this.getSharedEnderChestContainer();
         this.saveEnderChestContainer(DEFAULT_ENDER_CHEST_COLOR_CODE, null, itemContainer);
+    }
+
+    public ItemStack getEnderChestBlockLockItem(int posX, int posY, int posZ) {
+        EnderChestBlockConfig blockConfig = this.getOrCreateEnderChestBlockConfig(posX, posY, posZ);
+
+        if (blockConfig.ownerUuid == null) {
+            return null;
+        }
+
+        return new ItemStack(ADAMANTITE_INGOT_ITEM_ID, 1);
+    }
+
+    public ItemStack createPocketDimensionSafeItemStack() {
+        return new ItemStack("pocket_DimensionSafe", 1);
+    }
+
+    private boolean isAdamantiteIngot(ItemStack itemStack) {
+        return itemStack != null
+                && !itemStack.isEmpty()
+                && ADAMANTITE_INGOT_ITEM_ID.equals(itemStack.getItemId());
+    }
+
+    public void deleteEnderChestBlockConfig(int posX, int posY, int posZ) {
+        String locationKey = this.createEnderChestLocationKey(posX, posY, posZ);
+
+        try {
+            this.dbJsonObject.deleteEnderChestBlockConfig(locationKey);
+        } catch (Exception errCatch) {
+            System.err.println("[EnderStorage] Failed to delete Ender_Chest config at " + locationKey + ": " + errCatch.getMessage());
+        }
     }
 
     public ItemContainer removePocketDimensionSafeAndReturnContents(int posX, int posY, int posZ) {
@@ -280,6 +365,103 @@ public class EnderStorageManager {
 
     private String createPocketDimensionSafeLocationKey(int posX, int posY, int posZ) {
         return posX + ":" + posY + ":" + posZ;
+    }
+
+    private String createEnderChestLocationKey(int posX, int posY, int posZ) {
+        return posX + ":" + posY + ":" + posZ;
+    }
+
+    private EnderChestBlockConfig getOrCreateEnderChestBlockConfig(int posX, int posY, int posZ) {
+        String locationKey = this.createEnderChestLocationKey(posX, posY, posZ);
+
+        try {
+            DatabaseHandler.EnderChestBlockConfig savedConfig = this.dbJsonObject.getEnderChestBlockConfig(locationKey);
+
+            if (savedConfig != null) {
+                return new EnderChestBlockConfig(this.normalizeColorCode(savedConfig.colorCode), savedConfig.ownerUuid);
+            }
+
+            this.dbJsonObject.saveEnderChestBlockConfig(locationKey, DEFAULT_ENDER_CHEST_COLOR_CODE, null);
+        } catch (Exception errCatch) {
+            System.err.println("[EnderStorage] Failed to load Ender_Chest config for " + locationKey + ": " + errCatch.getMessage());
+        }
+
+        return new EnderChestBlockConfig(DEFAULT_ENDER_CHEST_COLOR_CODE, null);
+    }
+
+    private void saveEnderChestBlockConfig(int posX, int posY, int posZ, EnderChestBlockConfig blockConfig) {
+        if (!this.canUseDatabase()) {
+            return;
+        }
+
+        String locationKey = this.createEnderChestLocationKey(posX, posY, posZ);
+
+        try {
+            this.dbJsonObject.saveEnderChestBlockConfig(
+                    locationKey,
+                    this.normalizeColorCode(blockConfig.colorCode),
+                    blockConfig.ownerUuid
+            );
+        } catch (Exception errCatch) {
+            System.err.println("[EnderStorage] Failed to save Ender_Chest config for " + locationKey + ": " + errCatch.getMessage());
+        }
+    }
+
+    private void applyEnderChestLockWindow(
+            Player player,
+            int posX,
+            int posY,
+            int posZ,
+            EnderChestBlockConfig previousConfig,
+            ItemContainer lockContainer
+    ) {
+        ItemStack lockItem = lockContainer.getItemStack((short) 0);
+        String colorCode = this.normalizeColorCode(previousConfig.colorCode);
+
+        if (lockItem == null || lockItem.isEmpty()) {
+            this.saveEnderChestBlockConfig(posX, posY, posZ, new EnderChestBlockConfig(colorCode, null));
+            this.sendPlayerMessage(player, "Ender_Chest set to public network " + colorCode + ".");
+            return;
+        }
+
+        if (!ADAMANTITE_INGOT_ITEM_ID.equals(lockItem.getItemId())) {
+            this.returnItemToPlayer(player, lockItem);
+            this.saveEnderChestBlockConfig(posX, posY, posZ, new EnderChestBlockConfig(colorCode, null));
+            this.sendPlayerMessage(player, "Only an adamantite ingot can lock an Ender_Chest. Invalid item returned.");
+            return;
+        }
+
+        if (lockItem.getQuantity() > 1) {
+            this.returnItemToPlayer(player, lockItem.withQuantity(lockItem.getQuantity() - 1));
+        }
+
+        UUID ownerUuid = previousConfig.ownerUuid == null ? player.getUuid() : previousConfig.ownerUuid;
+        this.saveEnderChestBlockConfig(posX, posY, posZ, new EnderChestBlockConfig(colorCode, ownerUuid));
+        this.sendPlayerMessage(player, "Ender_Chest set to private network " + colorCode + " owned by " + ownerUuid + ".");
+    }
+
+    private void returnItemToPlayer(Player player, ItemStack itemStack) {
+        if (player == null || itemStack == null || itemStack.isEmpty()) {
+            return;
+        }
+
+        @SuppressWarnings("rawtypes") Ref playerReference = player.getReference();
+
+        if (playerReference == null) {
+            return;
+        }
+
+        @SuppressWarnings("rawtypes") Store playerReferenceStore = playerReference.getStore();
+        //noinspection unchecked
+        player.giveItem(itemStack, playerReference, playerReferenceStore);
+    }
+
+    private String normalizeColorCode(String colorCode) {
+        if (colorCode == null || colorCode.isBlank()) {
+            return DEFAULT_ENDER_CHEST_COLOR_CODE;
+        }
+
+        return colorCode;
     }
 
     private boolean canAccessPocketDimensionSafe(Player player, String locationKey) {
@@ -571,6 +753,16 @@ public class EnderStorageManager {
             }
 
             return new EnderChestKey(storageKey, null);
+        }
+    }
+
+    private static class EnderChestBlockConfig {
+        private final String colorCode;
+        private final UUID ownerUuid;
+
+        private EnderChestBlockConfig(String colorCode, UUID ownerUuid) {
+            this.colorCode = colorCode;
+            this.ownerUuid = ownerUuid;
         }
     }
 
