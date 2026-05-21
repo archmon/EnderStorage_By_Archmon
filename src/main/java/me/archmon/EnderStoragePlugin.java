@@ -53,6 +53,9 @@ public class EnderStoragePlugin extends JavaPlugin {
         manager.setTickSystem(enderStorageTickSystem);
         this.getEntityStoreRegistry().registerSystem(enderStorageTickSystem);
         this.getEntityStoreRegistry().registerSystem(new EnderStorageUseBlockSystem(manager));
+        this.getEntityStoreRegistry().registerSystem(new EnderStoragePlaceBlockSystem(manager));
+        this.getEntityStoreRegistry().registerSystem(new EnderStorageDamageBlockSystem(manager));
+        this.getEntityStoreRegistry().registerSystem(new EnderStorageBreakBlockSystem(manager));
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             if (manager != null) {

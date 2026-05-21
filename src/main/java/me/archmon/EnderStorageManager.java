@@ -80,7 +80,6 @@ public class EnderStorageManager {
         String locationKey = this.createPocketDimensionSafeLocationKey(posX, posY, posZ);
 
         if (!this.canAccessPocketDimensionSafe(player, locationKey)) {
-            sendPlayerMessage(player, "You do not have permission to access this Pocket Dimension Safe.");
             return;
         }
 
@@ -295,9 +294,15 @@ public class EnderStorageManager {
                 return true;
             }
 
-            return this.isServerOperator(player);
+            if (this.isServerOperator(player)) {
+                return true;
+            }
+
+            this.sendPlayerMessage(player, "You do not have permission to access this pocket dimension safe.");
+            return false;
         } catch (Exception errCatch) {
             System.err.println("[EnderStorage] Failed to check pocket_DimensionSafe owner for " + locationKey + ": " + errCatch.getMessage());
+            this.sendPlayerMessage(player, "Unable to verify pocket dimension safe ownership.");
             return false;
         }
     }
@@ -318,14 +323,66 @@ public class EnderStorageManager {
         }
     }
 
+    public void registerPlacedPocketDimensionSafe(Player player, int posX, int posY, int posZ) {
+        if (player == null || !this.canUseDatabase()) {
+            return;
+        }
+
+        String locationKey = this.createPocketDimensionSafeLocationKey(posX, posY, posZ);
+
+        try {
+            UUID existingOwnerUuid = this.dbJsonObject.getPocketDimensionSafeOwner(locationKey);
+
+            if (existingOwnerUuid == null) {
+                this.dbJsonObject.savePocketDimensionSafeInventory(locationKey, player.getUuid(), "{}");
+            }
+        } catch (Exception errCatch) {
+            System.err.println("[EnderStorage] Failed to register placed pocket_DimensionSafe at " + locationKey + ": " + errCatch.getMessage());
+        }
+    }
+
+    public boolean canModifyPocketDimensionSafe(Player player, int posX, int posY, int posZ) {
+        if (player == null) {
+            return false;
+        }
+
+        String locationKey = this.createPocketDimensionSafeLocationKey(posX, posY, posZ);
+
+        try {
+            UUID ownerUuid = this.dbJsonObject.getPocketDimensionSafeOwner(locationKey);
+
+            if (ownerUuid == null) {
+                return true;
+            }
+
+            if (ownerUuid.equals(player.getUuid())) {
+                return true;
+            }
+
+            return this.isServerOperator(player);
+        } catch (Exception errCatch) {
+            System.err.println("[EnderStorage] Failed to check pocket_DimensionSafe modification permission for " + locationKey + ": " + errCatch.getMessage());
+            return false;
+        }
+    }
+
+    public UUID getPocketDimensionSafeOwner(int posX, int posY, int posZ) {
+        String locationKey = this.createPocketDimensionSafeLocationKey(posX, posY, posZ);
+
+        try {
+            return this.dbJsonObject.getPocketDimensionSafeOwner(locationKey);
+        } catch (Exception errCatch) {
+            System.err.println("[EnderStorage] Failed to get pocket_DimensionSafe owner for " + locationKey + ": " + errCatch.getMessage());
+            return null;
+        }
+    }
+
     private boolean isServerOperator(Player player) {
-        /*
-         * TODO:
-         * Replace this with the official Hytale permission/op check once the correct API call is known.
-         *
-         * For now this returns false so pocket_DimensionSafe access fails closed.
-         */
-        return false;
+        return player != null
+                && (
+                player.hasPermission("enderstorage.admin")
+                        || player.hasPermission("enderstorage.safe.bypass")
+        );
     }
 
     private ItemContainer loadPocketDimensionSafeContainer(String locationKey) {
@@ -514,6 +571,34 @@ public class EnderStorageManager {
             }
 
             return new EnderChestKey(storageKey, null);
+        }
+    }
+
+    public boolean isPocketDimensionSafeEmpty(int posX, int posY, int posZ) {
+        String locationKey = this.createPocketDimensionSafeLocationKey(posX, posY, posZ);
+        ItemContainer itemContainer = this.loadPocketDimensionSafeContainer(locationKey);
+
+        short capacity = itemContainer.getCapacity();
+
+        for (short slot = 0; slot < capacity; slot++) {
+            ItemStack itemStack = itemContainer.getItemStack(slot);
+
+            if (itemStack != null && !itemStack.isEmpty()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public void deletePocketDimensionSafeData(int posX, int posY, int posZ) {
+        String locationKey = this.createPocketDimensionSafeLocationKey(posX, posY, posZ);
+
+        try {
+            this.dbJsonObject.deletePocketDimensionSafe(locationKey);
+            this.loadedPocketDimensionSafeContainers.remove(locationKey);
+        } catch (Exception errCatch) {
+            System.err.println("[EnderStorage] Failed to delete pocket_DimensionSafe at " + locationKey + ": " + errCatch.getMessage());
         }
     }
 }
