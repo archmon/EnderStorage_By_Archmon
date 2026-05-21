@@ -163,20 +163,13 @@ public class EnderStorageManager {
             lockContainer.setItemStackForSlot((short) 0, new ItemStack(ADAMANTITE_INGOT_ITEM_ID, 1));
         }
 
-        String ownerDescription = blockConfig.ownerUuid == null ? "public" : blockConfig.ownerUuid.toString();
-        this.sendPlayerMessage(player, "Ender_Chest network: " + blockConfig.colorCode + " owner: " + ownerDescription + ".");
-        this.sendPlayerMessage(player, "Place 1 adamantite ingot in this window to make this block use your private network.");
-        this.sendPlayerMessage(player, "Remove the adamantite ingot to return this block to the public network.");
+        String ownerDescription = this.describeEnderChestOwner(player, blockConfig.ownerUuid);
 
-        this.openContainerForPlayer(
+        this.openEnderChestWrenchPage(
                 player,
                 lockContainer,
-                posX,
-                posY,
-                posZ,
-                0,
-                null,
-                false,
+                blockConfig,
+                ownerDescription,
                 () -> this.applyEnderChestLockWindow(player, posX, posY, posZ, blockConfig, lockContainer)
         );
     }
@@ -364,6 +357,92 @@ public class EnderStorageManager {
                 true,
                 new Window[]{(Window) containerWindow}
         );
+    }
+
+    private void openEnderChestWrenchPage(
+            Player player,
+            ItemContainer lockContainer,
+            EnderChestBlockConfig blockConfig,
+            String ownerDescription,
+            Runnable closeAction
+    ) {
+        ContainerWindow lockWindow = new ContainerWindow(lockContainer);
+        lockWindow.registerCloseEvent((_) -> closeAction.run());
+
+        @SuppressWarnings("rawtypes") Ref playerReference = player.getReference();
+
+        if (playerReference == null || player.getPlayerRef() == null) {
+            return;
+        }
+
+        @SuppressWarnings("rawtypes") Store playerReferenceStore = playerReference.getStore();
+        EnderChestWrenchPage wrenchPage = new EnderChestWrenchPage(
+                player.getPlayerRef(),
+                blockConfig.colorCode,
+                ownerDescription,
+                () -> this.hasAdamantiteInLockSlot(lockContainer),
+                () -> this.insertAdamantiteIntoLockSlot(player, lockContainer),
+                () -> this.removeAdamantiteFromLockSlot(player, lockContainer)
+        );
+
+        //noinspection unchecked
+        player.getPageManager().openCustomPageWithWindows(
+                playerReference,
+                playerReferenceStore,
+                wrenchPage,
+                lockWindow
+        );
+    }
+
+    private String describeEnderChestOwner(Player player, UUID ownerUuid) {
+        if (ownerUuid == null) {
+            return "Public network";
+        }
+
+        if (player != null && ownerUuid.equals(player.getUuid())) {
+            return player.getDisplayName();
+        }
+
+        return "Private network";
+    }
+
+    private boolean hasAdamantiteInLockSlot(ItemContainer lockContainer) {
+        ItemStack lockItem = lockContainer.getItemStack((short) 0);
+        return this.isAdamantiteIngot(lockItem);
+    }
+
+    private void insertAdamantiteIntoLockSlot(Player player, ItemContainer lockContainer) {
+        ItemStack lockItem = lockContainer.getItemStack((short) 0);
+
+        if (lockItem != null && !lockItem.isEmpty()) {
+            this.sendPlayerMessage(player, "The Ender_Chest lock slot is already occupied.");
+            return;
+        }
+
+        ItemStack adamantiteIngot = new ItemStack(ADAMANTITE_INGOT_ITEM_ID, 1);
+
+        if (player.getInventory() == null
+                || !player.getInventory().getCombinedHotbarFirst().canRemoveItemStack(adamantiteIngot, true, true)) {
+            this.sendPlayerMessage(player, "You do not have an adamantite ingot to insert.");
+            return;
+        }
+
+        player.getInventory().getCombinedHotbarFirst().removeItemStack(adamantiteIngot, true, true);
+        lockContainer.setItemStackForSlot((short) 0, adamantiteIngot);
+        this.sendPlayerMessage(player, "Inserted one adamantite ingot into the Ender_Chest lock slot.");
+    }
+
+    private void removeAdamantiteFromLockSlot(Player player, ItemContainer lockContainer) {
+        ItemStack lockItem = lockContainer.getItemStack((short) 0);
+
+        if (lockItem == null || lockItem.isEmpty()) {
+            this.sendPlayerMessage(player, "The Ender_Chest lock slot is empty.");
+            return;
+        }
+
+        lockContainer.removeItemStackFromSlot((short) 0);
+        this.returnItemToPlayer(player, lockItem);
+        this.sendPlayerMessage(player, "Removed the adamantite ingot from the Ender_Chest lock slot.");
     }
 
     private String createPocketDimensionSafeLocationKey(int posX, int posY, int posZ) {
