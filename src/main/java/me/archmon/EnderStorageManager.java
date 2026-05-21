@@ -80,7 +80,7 @@ public class EnderStorageManager {
         String locationKey = this.createPocketDimensionSafeLocationKey(posX, posY, posZ);
 
         if (!this.canAccessPocketDimensionSafe(player, locationKey)) {
-            player.sendMessage(Message.raw("You do not have permission to access this pocket dimension safe."));
+            sendPlayerMessage(player, "You do not have permission to access this Pocket Dimension Safe.");
             return;
         }
 
