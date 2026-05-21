@@ -61,18 +61,6 @@ public class EnderChestWrenchPage extends InteractiveCustomUIPage<EnderChestWren
             Store<EntityStore> store,
             WrenchPageEventData eventData
     ) {
-        if (eventData.colorOne != null) {
-            this.selectedColors[0] = this.parseColorIndex(eventData.colorOne, this.selectedColors[0]);
-        }
-
-        if (eventData.colorTwo != null) {
-            this.selectedColors[1] = this.parseColorIndex(eventData.colorTwo, this.selectedColors[1]);
-        }
-
-        if (eventData.colorThree != null) {
-            this.selectedColors[2] = this.parseColorIndex(eventData.colorThree, this.selectedColors[2]);
-        }
-
         if ("InsertAdamantite".equals(eventData.action) && this.insertAdamantiteAction != null) {
             this.insertAdamantiteAction.run();
         }
@@ -81,30 +69,40 @@ public class EnderChestWrenchPage extends InteractiveCustomUIPage<EnderChestWren
             this.removeAdamantiteAction.run();
         }
 
+        if ("ColorOnePrevious".equals(eventData.action)) {
+            this.cycleColor(0, -1);
+        }
+
+        if ("ColorOneNext".equals(eventData.action)) {
+            this.cycleColor(0, 1);
+        }
+
+        if ("ColorTwoPrevious".equals(eventData.action)) {
+            this.cycleColor(1, -1);
+        }
+
+        if ("ColorTwoNext".equals(eventData.action)) {
+            this.cycleColor(1, 1);
+        }
+
+        if ("ColorThreePrevious".equals(eventData.action)) {
+            this.cycleColor(2, -1);
+        }
+
+        if ("ColorThreeNext".equals(eventData.action)) {
+            this.cycleColor(2, 1);
+        }
+
         UICommandBuilder commandBuilder = new UICommandBuilder();
         this.writeState(commandBuilder);
         this.sendUpdate(commandBuilder, false);
     }
 
+    public String getSelectedColorCode() {
+        return this.selectedColors[0] + ":" + this.selectedColors[1] + ":" + this.selectedColors[2];
+    }
+
     private void bindEvents(UIEventBuilder eventBuilder) {
-        eventBuilder.addEventBinding(
-                CustomUIEventBindingType.ValueChanged,
-                "#ColorOne",
-                EventData.of(WrenchPageEventData.KEY_COLOR_ONE, "#ColorOne.Value"),
-                false
-        );
-        eventBuilder.addEventBinding(
-                CustomUIEventBindingType.ValueChanged,
-                "#ColorTwo",
-                EventData.of(WrenchPageEventData.KEY_COLOR_TWO, "#ColorTwo.Value"),
-                false
-        );
-        eventBuilder.addEventBinding(
-                CustomUIEventBindingType.ValueChanged,
-                "#ColorThree",
-                EventData.of(WrenchPageEventData.KEY_COLOR_THREE, "#ColorThree.Value"),
-                false
-        );
         eventBuilder.addEventBinding(
                 CustomUIEventBindingType.Activating,
                 "#InsertAdamantite",
@@ -117,12 +115,24 @@ public class EnderChestWrenchPage extends InteractiveCustomUIPage<EnderChestWren
                 EventData.of(WrenchPageEventData.KEY_ACTION, "RemoveAdamantite"),
                 false
         );
+        this.bindAction(eventBuilder, "#ColorOnePrevious", "ColorOnePrevious");
+        this.bindAction(eventBuilder, "#ColorOneNext", "ColorOneNext");
+        this.bindAction(eventBuilder, "#ColorTwoPrevious", "ColorTwoPrevious");
+        this.bindAction(eventBuilder, "#ColorTwoNext", "ColorTwoNext");
+        this.bindAction(eventBuilder, "#ColorThreePrevious", "ColorThreePrevious");
+        this.bindAction(eventBuilder, "#ColorThreeNext", "ColorThreeNext");
+    }
+
+    private void bindAction(UIEventBuilder eventBuilder, String selector, String action) {
+        eventBuilder.addEventBinding(
+                CustomUIEventBindingType.Activating,
+                selector,
+                EventData.of(WrenchPageEventData.KEY_ACTION, action),
+                false
+        );
     }
 
     private void writeState(UICommandBuilder commandBuilder) {
-        commandBuilder.set("#ColorOne.Value", Integer.toString(this.selectedColors[0]));
-        commandBuilder.set("#ColorTwo.Value", Integer.toString(this.selectedColors[1]));
-        commandBuilder.set("#ColorThree.Value", Integer.toString(this.selectedColors[2]));
         commandBuilder.set("#NetworkOwner.Text", this.ownerDescription);
         this.writeColorState(commandBuilder, "#ColorOneName", "#LeftSwatch", this.selectedColors[0]);
         this.writeColorState(commandBuilder, "#ColorTwoName", "#CenterSwatch", this.selectedColors[1]);
@@ -134,6 +144,11 @@ public class EnderChestWrenchPage extends InteractiveCustomUIPage<EnderChestWren
         EnderChestColor color = EnderChestColor.byIndex(colorIndex);
         commandBuilder.set(namePath + ".Text", color.getDisplayName());
         commandBuilder.set(swatchPath + ".Background", color.getHexColor());
+    }
+
+    private void cycleColor(int colorPosition, int direction) {
+        int colorCount = EnderChestColor.count();
+        this.selectedColors[colorPosition] = Math.floorMod(this.selectedColors[colorPosition] + direction, colorCount);
     }
 
     private void writeLockSlotState(UICommandBuilder commandBuilder) {
@@ -172,30 +187,15 @@ public class EnderChestWrenchPage extends InteractiveCustomUIPage<EnderChestWren
     }
 
     public static class WrenchPageEventData {
-        private static final String KEY_COLOR_ONE = "ColorOne";
-        private static final String KEY_COLOR_TWO = "ColorTwo";
-        private static final String KEY_COLOR_THREE = "ColorThree";
         private static final String KEY_ACTION = "Action";
 
         public static final BuilderCodec<WrenchPageEventData> CODEC = BuilderCodec
                 .builder(WrenchPageEventData.class, WrenchPageEventData::new)
-                .addField(new KeyedCodec<>(KEY_COLOR_ONE, new StringCodec(), false),
-                        (eventData, value) -> eventData.colorOne = value,
-                        eventData -> eventData.colorOne)
-                .addField(new KeyedCodec<>(KEY_COLOR_TWO, new StringCodec(), false),
-                        (eventData, value) -> eventData.colorTwo = value,
-                        eventData -> eventData.colorTwo)
-                .addField(new KeyedCodec<>(KEY_COLOR_THREE, new StringCodec(), false),
-                        (eventData, value) -> eventData.colorThree = value,
-                        eventData -> eventData.colorThree)
                 .addField(new KeyedCodec<>(KEY_ACTION, new StringCodec(), false),
                         (eventData, value) -> eventData.action = value,
                         eventData -> eventData.action)
                 .build();
 
-        private String colorOne;
-        private String colorTwo;
-        private String colorThree;
         private String action;
 
         public WrenchPageEventData() {

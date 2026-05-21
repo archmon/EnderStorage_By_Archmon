@@ -1,21 +1,24 @@
 $C = "../Common.ui";
 
 @ColorNameStyle = (
-  FontSize: 13,
+  FontSize: 14,
   TextColor: $C.@ColorGrayCaption,
-  VerticalAlignment: Center
+  VerticalAlignment: Center,
+  HorizontalAlignment: Center
 );
 
 @ColorSwatch = Group {
-  Anchor: (Width: 58, Height: 36, Right: 8);
+  Anchor: (Width: 110, Height: 38, Bottom: 8);
   Background: #f9fffe;
 };
 
 @PreviewLabelStyle = (
-  FontSize: 12,
+  FontSize: 13,
   TextColor: $C.@ColorGrayCaption,
   HorizontalAlignment: Center
 );
+
+@ColorControlButtonAnchor = Anchor(Width: 124, Height: 42, Bottom: 8);
 
 $C.@PageOverlay {
   LayoutMode: Middle;
@@ -60,7 +63,7 @@ $C.@PageOverlay {
 
         Group {
           LayoutMode: Top;
-          Anchor: (Width: 58, Right: 8);
+          Anchor: (Width: 132, Right: 12);
 
           Label {
             Text: "Left";
@@ -68,12 +71,27 @@ $C.@PageOverlay {
             Anchor: (Bottom: 4);
           }
 
+          Label #ColorOneName {
+            Style: @ColorNameStyle;
+            Anchor: (Height: 22, Bottom: 8);
+          }
+
+          $C.@TextButton #ColorOnePrevious {
+            Text: "Previous";
+            Anchor: @ColorControlButtonAnchor;
+          }
+
           @ColorSwatch #LeftSwatch {}
+
+          $C.@TextButton #ColorOneNext {
+            Text: "Next";
+            Anchor: @ColorControlButtonAnchor;
+          }
         }
 
         Group {
           LayoutMode: Top;
-          Anchor: (Width: 58, Right: 8);
+          Anchor: (Width: 132, Right: 12);
 
           Label {
             Text: "Center";
@@ -81,12 +99,27 @@ $C.@PageOverlay {
             Anchor: (Bottom: 4);
           }
 
+          Label #ColorTwoName {
+            Style: @ColorNameStyle;
+            Anchor: (Height: 22, Bottom: 8);
+          }
+
+          $C.@TextButton #ColorTwoPrevious {
+            Text: "Previous";
+            Anchor: @ColorControlButtonAnchor;
+          }
+
           @ColorSwatch #CenterSwatch {}
+
+          $C.@TextButton #ColorTwoNext {
+            Text: "Next";
+            Anchor: @ColorControlButtonAnchor;
+          }
         }
 
         Group {
           LayoutMode: Top;
-          Anchor: (Width: 58, Right: 8);
+          Anchor: (Width: 132);
 
           Label {
             Text: "Right";
@@ -94,117 +127,24 @@ $C.@PageOverlay {
             Anchor: (Bottom: 4);
           }
 
+          Label #ColorThreeName {
+            Style: @ColorNameStyle;
+            Anchor: (Height: 22, Bottom: 8);
+          }
+
+          $C.@TextButton #ColorThreePrevious {
+            Text: "Previous";
+            Anchor: @ColorControlButtonAnchor;
+          }
+
           @ColorSwatch #RightSwatch {}
+
+        $C.@TextButton #ColorThreeNext {
+          Text: "Next";
+          Anchor: @ColorControlButtonAnchor;
         }
       }
-
-      Group {
-        LayoutMode: Left;
-        Anchor: (Bottom: 12);
-
-        Label {
-          Text: "Left";
-          Anchor: (Width: 96, Top: 6, Right: 14);
-          Style: $C.@DefaultLabelStyle;
-        }
-
-        $C.@DropdownBox #ColorOne {
-          @Anchor = (Width: 190, Right: 16);
-          DropdownEntry { Value: "0"; Text: "White"; }
-          DropdownEntry { Value: "1"; Text: "Light Gray"; }
-          DropdownEntry { Value: "2"; Text: "Gray"; }
-          DropdownEntry { Value: "3"; Text: "Black"; }
-          DropdownEntry { Value: "4"; Text: "Brown"; }
-          DropdownEntry { Value: "5"; Text: "Red"; }
-          DropdownEntry { Value: "6"; Text: "Orange"; }
-          DropdownEntry { Value: "7"; Text: "Yellow"; }
-          DropdownEntry { Value: "8"; Text: "Lime"; }
-          DropdownEntry { Value: "9"; Text: "Green"; }
-          DropdownEntry { Value: "10"; Text: "Cyan"; }
-          DropdownEntry { Value: "11"; Text: "Light Blue"; }
-          DropdownEntry { Value: "12"; Text: "Blue"; }
-          DropdownEntry { Value: "13"; Text: "Purple"; }
-          DropdownEntry { Value: "14"; Text: "Magenta"; }
-          DropdownEntry { Value: "15"; Text: "Pink"; }
-        }
-
-        Label #ColorOneName {
-          Style: @ColorNameStyle;
-          Anchor: (Top: 6);
-        }
-      }
-
-      Group {
-        LayoutMode: Left;
-        Anchor: (Bottom: 12);
-
-        Label {
-          Text: "Center";
-          Anchor: (Width: 96, Top: 6, Right: 14);
-          Style: $C.@DefaultLabelStyle;
-        }
-
-        $C.@DropdownBox #ColorTwo {
-          @Anchor = (Width: 190, Right: 16);
-          DropdownEntry { Value: "0"; Text: "White"; }
-          DropdownEntry { Value: "1"; Text: "Light Gray"; }
-          DropdownEntry { Value: "2"; Text: "Gray"; }
-          DropdownEntry { Value: "3"; Text: "Black"; }
-          DropdownEntry { Value: "4"; Text: "Brown"; }
-          DropdownEntry { Value: "5"; Text: "Red"; }
-          DropdownEntry { Value: "6"; Text: "Orange"; }
-          DropdownEntry { Value: "7"; Text: "Yellow"; }
-          DropdownEntry { Value: "8"; Text: "Lime"; }
-          DropdownEntry { Value: "9"; Text: "Green"; }
-          DropdownEntry { Value: "10"; Text: "Cyan"; }
-          DropdownEntry { Value: "11"; Text: "Light Blue"; }
-          DropdownEntry { Value: "12"; Text: "Blue"; }
-          DropdownEntry { Value: "13"; Text: "Purple"; }
-          DropdownEntry { Value: "14"; Text: "Magenta"; }
-          DropdownEntry { Value: "15"; Text: "Pink"; }
-        }
-
-        Label #ColorTwoName {
-          Style: @ColorNameStyle;
-          Anchor: (Top: 6);
-        }
-      }
-
-      Group {
-        LayoutMode: Left;
-        Anchor: (Bottom: 12);
-
-        Label {
-          Text: "Right";
-          Anchor: (Width: 96, Top: 6, Right: 14);
-          Style: $C.@DefaultLabelStyle;
-        }
-
-        $C.@DropdownBox #ColorThree {
-          @Anchor = (Width: 190, Right: 16);
-          DropdownEntry { Value: "0"; Text: "White"; }
-          DropdownEntry { Value: "1"; Text: "Light Gray"; }
-          DropdownEntry { Value: "2"; Text: "Gray"; }
-          DropdownEntry { Value: "3"; Text: "Black"; }
-          DropdownEntry { Value: "4"; Text: "Brown"; }
-          DropdownEntry { Value: "5"; Text: "Red"; }
-          DropdownEntry { Value: "6"; Text: "Orange"; }
-          DropdownEntry { Value: "7"; Text: "Yellow"; }
-          DropdownEntry { Value: "8"; Text: "Lime"; }
-          DropdownEntry { Value: "9"; Text: "Green"; }
-          DropdownEntry { Value: "10"; Text: "Cyan"; }
-          DropdownEntry { Value: "11"; Text: "Light Blue"; }
-          DropdownEntry { Value: "12"; Text: "Blue"; }
-          DropdownEntry { Value: "13"; Text: "Purple"; }
-          DropdownEntry { Value: "14"; Text: "Magenta"; }
-          DropdownEntry { Value: "15"; Text: "Pink"; }
-        }
-
-        Label #ColorThreeName {
-          Style: @ColorNameStyle;
-          Anchor: (Top: 6);
-        }
-      }
+    }
 
       Group {
         Anchor: (Vertical: 14, Height: 1);
@@ -271,7 +211,7 @@ $C.@PageOverlay {
       }
 
       Label {
-        Text: "The color selectors are preview-only in this build. The adamantite slot still controls public/private mode.";
+        Text: "Closing this window saves the selected color code and if the Adamantite Ingot is present to allow for a private network combo.";
         Style: (
           FontSize: 12,
           TextColor: $C.@ColorGrayCaption,

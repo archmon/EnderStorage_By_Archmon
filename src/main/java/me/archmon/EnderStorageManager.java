@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 @SuppressWarnings("removal")
 public class EnderStorageManager {
@@ -165,7 +166,15 @@ public class EnderStorageManager {
                 lockContainer,
                 blockConfig,
                 ownerDescription,
-                () -> this.applyEnderChestLockWindow(player, posX, posY, posZ, blockConfig, lockContainer)
+                selectedColorCode -> this.applyEnderChestLockWindow(
+                        player,
+                        posX,
+                        posY,
+                        posZ,
+                        blockConfig,
+                        lockContainer,
+                        selectedColorCode
+                )
         );
     }
 
@@ -359,11 +368,8 @@ public class EnderStorageManager {
             ItemContainer lockContainer,
             EnderChestBlockConfig blockConfig,
             String ownerDescription,
-            Runnable closeAction
+            Consumer<String> closeAction
     ) {
-        ContainerWindow lockWindow = new ContainerWindow(lockContainer);
-        lockWindow.registerCloseEvent((_) -> closeAction.run());
-
         @SuppressWarnings("rawtypes") Ref playerReference = player.getReference();
 
         if (playerReference == null || player.getPlayerRef() == null) {
@@ -379,6 +385,8 @@ public class EnderStorageManager {
                 () -> this.insertAdamantiteIntoLockSlot(player, lockContainer),
                 () -> this.removeAdamantiteFromLockSlot(player, lockContainer)
         );
+        ContainerWindow lockWindow = new ContainerWindow(lockContainer);
+        lockWindow.registerCloseEvent((_) -> closeAction.accept(wrenchPage.getSelectedColorCode()));
 
         //noinspection unchecked
         player.getPageManager().openCustomPageWithWindows(
@@ -499,10 +507,11 @@ public class EnderStorageManager {
             int posY,
             int posZ,
             EnderChestBlockConfig previousConfig,
-            ItemContainer lockContainer
+            ItemContainer lockContainer,
+            String selectedColorCode
     ) {
         ItemStack lockItem = lockContainer.getItemStack((short) 0);
-        String colorCode = this.normalizeColorCode(previousConfig.colorCode);
+        String colorCode = this.normalizeColorCode(selectedColorCode);
 
         if (lockItem == null || lockItem.isEmpty()) {
             this.saveEnderChestBlockConfig(posX, posY, posZ, new EnderChestBlockConfig(colorCode, null, null));
