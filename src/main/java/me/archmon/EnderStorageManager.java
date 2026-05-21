@@ -591,6 +591,11 @@ public class EnderStorageManager {
         return true;
     }
 
+    public ItemContainer getPocketDimensionSafeContents(int posX, int posY, int posZ) {
+        String locationKey = this.createPocketDimensionSafeLocationKey(posX, posY, posZ);
+        return this.loadPocketDimensionSafeContainer(locationKey);
+    }
+
     public void deletePocketDimensionSafeData(int posX, int posY, int posZ) {
         String locationKey = this.createPocketDimensionSafeLocationKey(posX, posY, posZ);
 
