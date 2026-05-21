@@ -46,7 +46,7 @@ public class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, U
 
         BlockType blockType = event.getBlockType();
 
-        //allow for player to open ender safe but not automation
+        // Allow player to open pocket_DimensionSafe, but do not expose a world-sided inventory.
         if (this.manager.isPocket_DimensionSafeBlock(blockType)) {
             Player player = this.getPlayerFromEvent(id, store, event);
 
@@ -55,7 +55,9 @@ public class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, U
                 BlockType blockType1 = event.getBlockType();
                 byte rotationalIndex = 0;
 
-                this.manager.openEnderStorage(
+                event.setCancelled(true);
+
+                this.manager.openPocketDimensionSafe(
                         player,
                         targetedBlock.x,
                         targetedBlock.y,
@@ -63,8 +65,6 @@ public class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, U
                         rotationalIndex,
                         blockType1
                 );
-
-                event.setCancelled(true);
             }
 
             return;
@@ -79,6 +79,8 @@ public class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, U
                 BlockType blockType1 = event.getBlockType();
                 byte rotationalIndex = 0;
 
+                event.setCancelled(true);
+
                 this.manager.openSharedEnderChest(
                         player,
                         targetedBlock.x,
@@ -87,8 +89,6 @@ public class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, U
                         rotationalIndex,
                         blockType1
                 );
-
-                event.setCancelled(true);
             }
         }
     }

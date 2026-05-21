@@ -7,6 +7,7 @@ import com.google.gson.reflect.TypeToken;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.protocol.packets.interface_.Page;
+import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.entity.entities.player.windows.ContainerBlockWindow;
@@ -16,247 +17,454 @@ import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
 import com.hypixel.hytale.server.core.inventory.container.SimpleItemContainer;
 import com.hypixel.hytale.server.core.util.BsonUtil;
+import org.bson.BsonDocument;
 
-import java.io.PrintStream;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-
-import org.bson.BsonDocument;
 
 @SuppressWarnings("removal")
 public class EnderStorageManager {
 
-    private static final UUID DEFAULT_ENDER_CHEST_CHANNEL_UUID = UUID.nameUUIDFromBytes("EnderStorage:Ender_Chest:default".getBytes());
-    @SuppressWarnings({"rawtypes", "unchecked"}) private final Map<UUID, ItemContainer> loadedContainers = new ConcurrentHashMap();
-    @SuppressWarnings({"rawtypes", "unchecked"}) private final Map<UUID, ItemContainer> loadedEnderChestContainers = new ConcurrentHashMap();
-    private final Gson gson = (new GsonBuilder()).setPrettyPrinting().create();
+    private static final short INVENTORY_SLOT_COUNT = 54;
+    private static final String DEFAULT_ENDER_CHEST_COLOR_CODE = "0:0:0";
+
+    private final Map<String, ItemContainer> loadedPocketDimensionSafeContainers = new ConcurrentHashMap<>();
+    private final Map<String, ItemContainer> loadedEnderChestContainers = new ConcurrentHashMap<>();
+
+    private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private final DatabaseHandler dbJsonObject;
 
     public EnderStorageManager(JsonObject dbConfigFile) {
+        JsonObject databaseJsonObject;
 
-        JsonObject databaseJsonObject = dbConfigFile.get("database").getAsJsonObject();
+        if (dbConfigFile != null && dbConfigFile.has("database")) {
+            databaseJsonObject = dbConfigFile.get("database").getAsJsonObject();
+        } else {
+            databaseJsonObject = new JsonObject();
+        }
+
         this.dbJsonObject = new DatabaseHandler(databaseJsonObject);
 
         try {
             this.dbJsonObject.dbConnect();
         } catch (Exception databaseFailedConnect) {
-            System.err.println("[EnderStorage] Failed to connect to database: "+ databaseFailedConnect.getMessage());
+            System.err.println("[EnderStorage] Failed to connect to database: " + databaseFailedConnect.getMessage());
         }
     }
 
-    public void openEnderStorage(Player player, int posX, int posY, int posZ, int rotationIndex, BlockType blockType) {
-        this.openEnderStorage(player, player.getUuid(), posX, posY, posZ, rotationIndex, blockType);
+    public boolean isEnderChestBlock(BlockType blockType) {
+        return blockType != null
+                && blockType.getId() != null
+                && blockType.getId().contains("Ender_Chest");
     }
 
-    public void openEnderStorage(Player player, UUID uuid, int posX, int posY, int posZ, int rotationIndex, BlockType blockType) {
+    public boolean isPocket_DimensionSafeBlock(BlockType blockType) {
+        return blockType != null
+                && blockType.getId() != null
+                && blockType.getId().contains("pocket_DimensionSafe");
+    }
 
-        ItemContainer itemContainer;
-        final ItemContainer finalItemContainer;
-        final ItemContainer finalItemContainer2;
+    private void sendPlayerMessage(Player player, String message) {
+        if (player != null) {
+            player.sendMessage(Message.raw(message));
+        }
+    }
 
-        if (this.loadedContainers.containsKey(uuid)){
-            itemContainer = this.loadedContainers.get(uuid);
-            short itemContainerCapacity = itemContainer.getCapacity();
-            short numberOfSlotsInInventory =63;
-
-            if (itemContainerCapacity != numberOfSlotsInInventory){
-                this.saveContainer(uuid, itemContainer);
-                this.loadedContainers.remove(uuid);
-                itemContainer = this.loadContainer(uuid);
-                this.loadedContainers.put(uuid, itemContainer);
-                finalItemContainer=itemContainer;
-                itemContainer.registerChangeEvent((_) -> this.saveContainer(uuid, finalItemContainer));
-            }
-        } else {
-            itemContainer = this.loadContainer(uuid);
-            this.loadedContainers.put(uuid, itemContainer);
-            finalItemContainer=itemContainer;
-            itemContainer.registerChangeEvent((_) -> this.saveContainer(uuid, finalItemContainer));
+    public void openPocketDimensionSafe(Player player, int posX, int posY, int posZ, int rotationIndex, BlockType blockType) {
+        if (player == null) {
+            return;
         }
 
-        Object containerBlockWindow;
-        if (blockType != null && itemContainer.getCapacity() == 63){
-            containerBlockWindow = new ContainerBlockWindow(posX, posY, posZ, rotationIndex, blockType, itemContainer);
-        } else {
-            containerBlockWindow = new ContainerWindow(itemContainer);
+        String locationKey = this.createPocketDimensionSafeLocationKey(posX, posY, posZ);
+
+        if (!this.canAccessPocketDimensionSafe(player, locationKey)) {
+            player.sendMessage(Message.raw("You do not have permission to access this pocket dimension safe."));
+            return;
         }
 
-        finalItemContainer2 = itemContainer;
-        ((Window)containerBlockWindow).registerCloseEvent((_)-> this.saveContainer(uuid, finalItemContainer2));
-        @SuppressWarnings("rawtypes") Ref playerReference = player.getReference();
-        assert playerReference != null;
-        @SuppressWarnings("rawtypes") Store playerReferenceStore = playerReference.getStore();
-        //noinspection unchecked
-        player.getPageManager().setPageWithWindows(playerReference, playerReferenceStore, Page.Bench, true, new Window[]{(Window)containerBlockWindow});
+        UUID ownerUuid = this.getOrCreatePocketDimensionSafeOwner(locationKey, player.getUuid());
+
+        if (ownerUuid == null) {
+            return;
+        }
+
+        ItemContainer itemContainer = this.getPocketDimensionSafeContainer(locationKey, ownerUuid);
+
+        this.openContainerForPlayer(
+                player,
+                itemContainer,
+                posX,
+                posY,
+                posZ,
+                rotationIndex,
+                blockType,
+                true,
+                () -> this.savePocketDimensionSafeContainer(locationKey, ownerUuid, itemContainer)
+        );
+    }
+
+    public void openSharedEnderChest(Player player, int posX, int posY, int posZ, int rotationIndex, BlockType blockType) {
+        if (player == null) {
+            return;
+        }
+
+        String colorCode = DEFAULT_ENDER_CHEST_COLOR_CODE;
+        UUID playerUuid = null;
+        ItemContainer itemContainer = this.getEnderChestContainer(colorCode, playerUuid);
+
+        this.openContainerForPlayer(
+                player,
+                itemContainer,
+                posX,
+                posY,
+                posZ,
+                rotationIndex,
+                blockType,
+                true,
+                () -> this.saveEnderChestContainer(colorCode, playerUuid, itemContainer)
+        );
     }
 
     public ItemContainer getSharedEnderChestContainer() {
-        UUID channelUuid = DEFAULT_ENDER_CHEST_CHANNEL_UUID;
-
-        if (this.loadedEnderChestContainers.containsKey(channelUuid)) {
-            return this.loadedEnderChestContainers.get(channelUuid);
-        }
-
-        ItemContainer itemContainer = this.loadContainer(channelUuid);
-        this.loadedEnderChestContainers.put(channelUuid, itemContainer);
-
-        final ItemContainer finalItemContainer = itemContainer;
-        itemContainer.registerChangeEvent((_) -> this.saveContainer(channelUuid, finalItemContainer));
-
-        return itemContainer;
+        return this.getEnderChestContainer(DEFAULT_ENDER_CHEST_COLOR_CODE, null);
     }
 
-    //Other mods can use this to access the shared ender chest inventory for automation purposes.
     public ItemContainer getEnderChestInventoryForAutomation() {
         return this.getSharedEnderChestContainer();
     }
 
-    //This is used to save the shared ender chest inventory when the player closes the inventory window.
     public void saveEnderChestInventory() {
-        this.saveContainer(DEFAULT_ENDER_CHEST_CHANNEL_UUID, this.getSharedEnderChestContainer());
-    }
-
-    //used in the EnderStoragePlugin to check if a block is an ender chest.
-    public boolean isEnderChestBlock(BlockType blockType) {
-        return blockType != null && blockType.getId() != null && blockType.getId().contains("Ender_Chest");
-    }
-
-    //used in the EnderStoragePlugin to check if a block is an ender safe.
-    public boolean isPocket_DimensionSafeBlock(BlockType blockType) {
-        return blockType != null && blockType.getId() != null && blockType.getId().contains("pocket_DimensionSafe");
-    }
-
-    public void openSharedEnderChest(Player player, int posX, int posY, int posZ, int rotationIndex, BlockType blockType) {
-        UUID channelUuid = DEFAULT_ENDER_CHEST_CHANNEL_UUID;
         ItemContainer itemContainer = this.getSharedEnderChestContainer();
-
-        Object containerBlockWindow;
-        if (blockType != null && itemContainer.getCapacity() == 63) {
-            containerBlockWindow = new ContainerBlockWindow(posX, posY, posZ, rotationIndex, blockType, itemContainer);
-        } else {
-            containerBlockWindow = new ContainerWindow(itemContainer);
-        }
-
-        final ItemContainer finalItemContainer = itemContainer;
-        ((Window)containerBlockWindow).registerCloseEvent((_) -> this.saveContainer(channelUuid, finalItemContainer));
-
-        @SuppressWarnings("rawtypes") Ref playerReference = player.getReference();
-        assert playerReference != null;
-        @SuppressWarnings("rawtypes") Store playerReferenceStore = playerReference.getStore();
-        //noinspection unchecked
-        player.getPageManager().setPageWithWindows(playerReference, playerReferenceStore, Page.Bench, true, new Window[]{(Window)containerBlockWindow});
+        this.saveEnderChestContainer(DEFAULT_ENDER_CHEST_COLOR_CODE, null, itemContainer);
     }
 
-    private ItemContainer loadContainer(UUID uuid){
+    public ItemContainer removePocketDimensionSafeAndReturnContents(int posX, int posY, int posZ) {
+        String locationKey = this.createPocketDimensionSafeLocationKey(posX, posY, posZ);
+        ItemContainer itemContainer = this.loadPocketDimensionSafeContainer(locationKey);
 
-        short numberOfSlotsShort = 63;
-
-        SimpleItemContainer simpleItemContainer = new SimpleItemContainer((numberOfSlotsShort));
-
-        try{
-            String jsonStringInventory_Data = this.dbJsonObject.getInventory(uuid);
-
-            if (jsonStringInventory_Data != null) {
-                Map<Integer, EnderStorageManager.SavedItem> inventoryLoadOutOfChest = (Map)this.gson.fromJson(jsonStringInventory_Data,
-                        (new TypeToken<Map<Integer, EnderStorageManager.SavedItem>>() {{
-                        Objects.requireNonNull(EnderStorageManager.this);
-                    }}).getType());
-
-                if (inventoryLoadOutOfChest != null) {
-                    for(@SuppressWarnings("rawtypes") Map.Entry databaseTable : inventoryLoadOutOfChest.entrySet()){
-                        int inventorySlotKeyNumber = (Integer)databaseTable.getKey();
-                        SavedItem databaseSavedItem = (SavedItem)databaseTable.getValue();
-
-                        try {
-                            BsonDocument databaseMetadata = null;
-                            if (databaseSavedItem.metadata != null && !databaseSavedItem.metadata.isEmpty()){
-                                try {
-                                    databaseMetadata = BsonDocument.parse(databaseSavedItem.metadata);
-                                } catch (Exception ErrorMetadata) {
-                                    PrintStream systemErrorVar = System.err;
-                                    String uuidString = String.valueOf(uuid);
-                                    systemErrorVar.println("[EnderStorage] Failed to parse metadata for " + uuidString + " slot " + inventorySlotKeyNumber);
-                                }
-                            }
-
-                            ItemStack itemStack;
-                            if (databaseMetadata != null) {
-                                itemStack = (new ItemStack(databaseSavedItem.id, databaseSavedItem.amount)).withMetadata(databaseMetadata);
-                            } else {
-                                itemStack = new ItemStack(databaseSavedItem.id, databaseSavedItem.amount);
-                            }
-
-                            itemStack = itemStack.withDurability(databaseSavedItem.durability);
-                            simpleItemContainer.setItemStackForSlot((short) inventorySlotKeyNumber, itemStack);
-                        } catch (Exception _) {
-                        }
-                    }
-                }
-            }
+        try {
+            this.dbJsonObject.deletePocketDimensionSafe(locationKey);
+            this.loadedPocketDimensionSafeContainers.remove(locationKey);
         } catch (Exception errCatch) {
-            PrintStream errorMessage = System.err;
-            String errorMessage1 = String.valueOf(uuid);
-            errorMessage.println("[EnderStorage] Error loading data for " + errorMessage1 + ": " + errCatch.getMessage());
+            System.err.println("[EnderStorage] Failed to delete pocket_DimensionSafe at " + locationKey + ": " + errCatch.getMessage());
         }
 
-        return simpleItemContainer;
+        return itemContainer;
     }
 
-
-    public void saveContainer(UUID uuid, ItemContainer itemContainer){
-
-        if (this.dbJsonObject != null &&  this.dbJsonObject.isConnected()) {
-            @SuppressWarnings("rawtypes") ConcurrentHashMap concurrentHashMap = new ConcurrentHashMap();
-            short itemContainerCapacity = itemContainer.getCapacity();
-
-            for (short i=0; i < itemContainerCapacity; ++i) {
-                ItemStack itemStack = itemContainer.getItemStack(i);
-                if (itemStack != null && !itemStack.isEmpty()) {
-                    String nullString = null;
-                    if (itemStack.getMetadata() != null) {//warning: getMetadata is deprecated.
-                        nullString = BsonUtil.toJson(itemStack.getMetadata());
-                    }
-
-                    double itemStackDurability = itemStack.getDurability();
-                    //noinspection unchecked
-                    concurrentHashMap.put((int) i, new SavedItem(itemStack.getItemId(), itemStack.getQuantity(), nullString, itemStackDurability));
-                }
-            }
-
-            try {
-                String jsonString = this.gson.toJson(concurrentHashMap);
-                this.saveInventoryToDB(uuid, jsonString);
-            } catch (Exception errCatch) {
-                PrintStream errorMessage = System.err;
-                String errorMessage1 = String.valueOf(uuid);
-                errorMessage.println("[EnderStorage] Error saving data for " + errorMessage1 + ": " + errCatch.getMessage());
-            }
+    public boolean canDestroyPocketDimensionSafe(Player player, int posX, int posY, int posZ) {
+        if (player == null) {
+            return false;
         }
 
-    }
-
-    public void saveInventoryToDB(UUID uuid, String itemContainer) throws Exception{
-        this.dbJsonObject.saveInventory(uuid, itemContainer);
+        String locationKey = this.createPocketDimensionSafeLocationKey(posX, posY, posZ);
+        return this.canAccessPocketDimensionSafe(player, locationKey);
     }
 
     public void saveAll() {
-        for (@SuppressWarnings("rawtypes") Map.Entry keyValue : this.loadedContainers.entrySet()) {
-            this.saveContainer((UUID)keyValue.getKey(), (ItemContainer)keyValue.getValue());
+        for (Map.Entry<String, ItemContainer> keyValue : this.loadedPocketDimensionSafeContainers.entrySet()) {
+            String locationKey = keyValue.getKey();
+            ItemContainer itemContainer = keyValue.getValue();
+
+            try {
+                UUID ownerUuid = this.dbJsonObject.getPocketDimensionSafeOwner(locationKey);
+
+                if (ownerUuid != null) {
+                    this.savePocketDimensionSafeContainer(locationKey, ownerUuid, itemContainer);
+                }
+            } catch (Exception errCatch) {
+                System.err.println("[EnderStorage] Failed to save pocket_DimensionSafe at " + locationKey + ": " + errCatch.getMessage());
+            }
         }
 
-        for (@SuppressWarnings("rawtypes") Map.Entry keyValue : this.loadedEnderChestContainers.entrySet()) {
-            this.saveContainer((UUID)keyValue.getKey(), (ItemContainer)keyValue.getValue());
+        for (Map.Entry<String, ItemContainer> keyValue : this.loadedEnderChestContainers.entrySet()) {
+            String enderChestStorageKey = keyValue.getKey();
+            EnderChestKey parsedKey = EnderChestKey.fromStorageKey(enderChestStorageKey);
+            ItemContainer itemContainer = keyValue.getValue();
+
+            this.saveEnderChestContainer(parsedKey.colorCode, parsedKey.playerUuid, itemContainer);
         }
 
         this.dbJsonObject.close();
     }
 
     public void setTickSystem(EnderStorageTickSystem tick) {
-        //used for the removing recipes
+        // Kept for compatibility with EnderStoragePlugin.
+        // Recipe-removal timing is handled through EnderStorageTickSystem.
     }
 
+    private ItemContainer getPocketDimensionSafeContainer(String locationKey, UUID ownerUuid) {
+        ItemContainer itemContainer = this.loadedPocketDimensionSafeContainers.get(locationKey);
+
+        if (itemContainer != null && itemContainer.getCapacity() == INVENTORY_SLOT_COUNT) {
+            return itemContainer;
+        }
+
+        if (itemContainer != null) {
+            this.savePocketDimensionSafeContainer(locationKey, ownerUuid, itemContainer);
+            this.loadedPocketDimensionSafeContainers.remove(locationKey);
+        }
+
+        itemContainer = this.loadPocketDimensionSafeContainer(locationKey);
+        this.loadedPocketDimensionSafeContainers.put(locationKey, itemContainer);
+
+        //removed cause duplication glitch
+        //final ItemContainer finalItemContainer = itemContainer;
+        //itemContainer.registerChangeEvent((_) -> this.savePocketDimensionSafeContainer(locationKey, ownerUuid, finalItemContainer));
+
+        return itemContainer;
+    }
+
+    private ItemContainer getEnderChestContainer(String colorCode, UUID optionalPlayerUuid) {
+        String enderChestStorageKey = EnderChestKey.toStorageKey(colorCode, optionalPlayerUuid);
+        ItemContainer itemContainer = this.loadedEnderChestContainers.get(enderChestStorageKey);
+
+        if (itemContainer != null && itemContainer.getCapacity() == INVENTORY_SLOT_COUNT) {
+            return itemContainer;
+        }
+
+        if (itemContainer != null) {
+            this.saveEnderChestContainer(colorCode, optionalPlayerUuid, itemContainer);
+            this.loadedEnderChestContainers.remove(enderChestStorageKey);
+        }
+
+        itemContainer = this.loadEnderChestContainer(colorCode, optionalPlayerUuid);
+        this.loadedEnderChestContainers.put(enderChestStorageKey, itemContainer);
+
+        //removed cause duplication glitch
+        //final ItemContainer finalItemContainer = itemContainer;
+        //itemContainer.registerChangeEvent((_) -> this.saveEnderChestContainer(colorCode, playerUuid, finalItemContainer));
+
+        return itemContainer;
+    }
+
+    private void openContainerForPlayer(
+            Player player,
+            ItemContainer itemContainer,
+            int posX,
+            int posY,
+            int posZ,
+            int rotationIndex,
+            BlockType blockType,
+            boolean useBlockWindow,
+            Runnable closeAction
+    ) {
+        Object containerWindow;
+
+        if (useBlockWindow && blockType != null && itemContainer.getCapacity() == INVENTORY_SLOT_COUNT) {
+            containerWindow = new ContainerBlockWindow(posX, posY, posZ, rotationIndex, blockType, itemContainer);
+        } else {
+            containerWindow = new ContainerWindow(itemContainer);
+        }
+
+        ((Window) containerWindow).registerCloseEvent((_) -> closeAction.run());
+
+        @SuppressWarnings("rawtypes") Ref playerReference = player.getReference();
+
+        if (playerReference == null) {
+            return;
+        }
+
+        @SuppressWarnings("rawtypes") Store playerReferenceStore = playerReference.getStore();
+
+        //noinspection unchecked
+        player.getPageManager().setPageWithWindows(
+                playerReference,
+                playerReferenceStore,
+                Page.Bench,
+                true,
+                new Window[]{(Window) containerWindow}
+        );
+    }
+
+    private String createPocketDimensionSafeLocationKey(int posX, int posY, int posZ) {
+        return posX + ":" + posY + ":" + posZ;
+    }
+
+    private boolean canAccessPocketDimensionSafe(Player player, String locationKey) {
+        try {
+            UUID ownerUuid = this.dbJsonObject.getPocketDimensionSafeOwner(locationKey);
+
+            if (ownerUuid == null) {
+                return true;
+            }
+
+            if (ownerUuid.equals(player.getUuid())) {
+                return true;
+            }
+
+            return this.isServerOperator(player);
+        } catch (Exception errCatch) {
+            System.err.println("[EnderStorage] Failed to check pocket_DimensionSafe owner for " + locationKey + ": " + errCatch.getMessage());
+            return false;
+        }
+    }
+
+    private UUID getOrCreatePocketDimensionSafeOwner(String locationKey, UUID fallbackOwnerUuid) {
+        try {
+            UUID existingOwnerUuid = this.dbJsonObject.getPocketDimensionSafeOwner(locationKey);
+
+            if (existingOwnerUuid != null) {
+                return existingOwnerUuid;
+            }
+
+            this.dbJsonObject.savePocketDimensionSafeInventory(locationKey, fallbackOwnerUuid, "{}");
+            return fallbackOwnerUuid;
+        } catch (Exception errCatch) {
+            System.err.println("[EnderStorage] Failed to create pocket_DimensionSafe owner for " + locationKey + ": " + errCatch.getMessage());
+            return null;
+        }
+    }
+
+    private boolean isServerOperator(Player player) {
+        /*
+         * TODO:
+         * Replace this with the official Hytale permission/op check once the correct API call is known.
+         *
+         * For now this returns false so pocket_DimensionSafe access fails closed.
+         */
+        return false;
+    }
+
+    private ItemContainer loadPocketDimensionSafeContainer(String locationKey) {
+        try {
+            String inventoryJson = this.dbJsonObject.getPocketDimensionSafeInventory(locationKey);
+            return this.itemContainerFromJson(inventoryJson, "pocket_DimensionSafe " + locationKey);
+        } catch (Exception errCatch) {
+            System.err.println("[EnderStorage] Error loading pocket_DimensionSafe data for " + locationKey + ": " + errCatch.getMessage());
+            return new SimpleItemContainer(INVENTORY_SLOT_COUNT);
+        }
+    }
+
+    public void savePocketDimensionSafeContainer(String locationKey, UUID ownerUuid, ItemContainer itemContainer) {
+        if (!this.canUseDatabase()) {
+            return;
+        }
+
+        try {
+            String inventoryJson = this.itemContainerToJson(itemContainer);
+            this.dbJsonObject.savePocketDimensionSafeInventory(locationKey, ownerUuid, inventoryJson);
+        } catch (Exception errCatch) {
+            System.err.println("[EnderStorage] Error saving pocket_DimensionSafe data for " + locationKey + ": " + errCatch.getMessage());
+        }
+    }
+
+    private ItemContainer loadEnderChestContainer(String colorCode, UUID playerUuid) {
+        try {
+            String inventoryJson = this.dbJsonObject.getEnderChestInventory(colorCode, playerUuid);
+            return this.itemContainerFromJson(inventoryJson, "Ender_Chest " + colorCode);
+        } catch (Exception errCatch) {
+            System.err.println("[EnderStorage] Error loading Ender_Chest data for " + colorCode + ": " + errCatch.getMessage());
+            return new SimpleItemContainer(INVENTORY_SLOT_COUNT);
+        }
+    }
+
+    private void saveEnderChestContainer(String colorCode, UUID optionalPlayerUuid, ItemContainer itemContainer) {
+        if (!this.canUseDatabase()) {
+            return;
+        }
+
+        try {
+            String inventoryJson = this.itemContainerToJson(itemContainer);
+            this.dbJsonObject.saveEnderChestInventory(colorCode, optionalPlayerUuid, inventoryJson);
+        } catch (Exception errCatch) {
+            System.err.println("[EnderStorage] Error saving Ender_Chest data for " + colorCode + ": " + errCatch.getMessage());
+        }
+    }
+
+    private ItemContainer itemContainerFromJson(String inventoryJson, String debugName) {
+        SimpleItemContainer simpleItemContainer = new SimpleItemContainer(INVENTORY_SLOT_COUNT);
+
+        if (inventoryJson == null || inventoryJson.isEmpty()) {
+            return simpleItemContainer;
+        }
+
+        Map<Integer, SavedItem> savedItems = this.gson.fromJson(
+                inventoryJson,
+                new TypeToken<Map<Integer, SavedItem>>() {
+                }.getType()
+        );
+
+        if (savedItems == null) {
+            return simpleItemContainer;
+        }
+
+        for (Map.Entry<Integer, SavedItem> entry : savedItems.entrySet()) {
+            int inventorySlot = entry.getKey();
+            SavedItem savedItem = entry.getValue();
+
+            if (savedItem == null || savedItem.id == null || savedItem.id.isEmpty()) {
+                continue;
+            }
+
+            if (inventorySlot < 0 || inventorySlot >= INVENTORY_SLOT_COUNT) {
+                continue;
+            }
+
+            try {
+                BsonDocument metadata = null;
+
+                if (savedItem.metadata != null && !savedItem.metadata.isEmpty()) {
+                    try {
+                        metadata = BsonDocument.parse(savedItem.metadata);
+                    } catch (Exception metadataError) {
+                        System.err.println("[EnderStorage] Failed to parse metadata for " + debugName + " slot " + inventorySlot);
+                    }
+                }
+
+                ItemStack itemStack;
+
+                if (metadata != null) {
+                    itemStack = new ItemStack(savedItem.id, savedItem.amount).withMetadata(metadata);
+                } else {
+                    itemStack = new ItemStack(savedItem.id, savedItem.amount);
+                }
+
+                itemStack = itemStack.withDurability(savedItem.durability);
+                simpleItemContainer.setItemStackForSlot((short) inventorySlot, itemStack);
+            } catch (Exception ignored) {
+            }
+        }
+
+        return simpleItemContainer;
+    }
+
+    private String itemContainerToJson(ItemContainer itemContainer) {
+        Map<Integer, SavedItem> inventoryMap = new HashMap<>();
+
+        short itemContainerCapacity = itemContainer.getCapacity();
+
+        for (short slot = 0; slot < itemContainerCapacity; ++slot) {
+            ItemStack itemStack = itemContainer.getItemStack(slot);
+
+            if (itemStack == null || itemStack.isEmpty()) {
+                continue;
+            }
+
+            String metadataJson = null;
+
+            if (itemStack.getMetadata() != null) {
+                metadataJson = BsonUtil.toJson(itemStack.getMetadata());
+            }
+
+            SavedItem savedItem = new SavedItem(
+                    itemStack.getItemId(),
+                    itemStack.getQuantity(),
+                    metadataJson,
+                    itemStack.getDurability()
+            );
+
+            inventoryMap.put((int) slot, savedItem);
+        }
+
+        return this.gson.toJson(inventoryMap);
+    }
+
+    private boolean canUseDatabase() {
+        return this.dbJsonObject != null && this.dbJsonObject.isConnected();
+    }
 
     private static class SavedItem {
         String id;
@@ -264,11 +472,48 @@ public class EnderStorageManager {
         String metadata;
         double durability;
 
-        public SavedItem(String id, int amount, String metadata, double durability){
+        public SavedItem(String id, int amount, String metadata, double durability) {
             this.id = id;
-            this.amount=amount;
-            this.metadata=metadata;
-            this.durability=durability;
+            this.amount = amount;
+            this.metadata = metadata;
+            this.durability = durability;
+        }
+    }
+
+    private static class EnderChestKey {
+        private final String colorCode;
+        private final UUID playerUuid;
+
+        private EnderChestKey(String colorCode, UUID playerUuid) {
+            this.colorCode = colorCode;
+            this.playerUuid = playerUuid;
+        }
+
+        private static String toStorageKey(String colorCode, UUID playerUuid) {
+            if (playerUuid == null) {
+                return "public:" + colorCode;
+            }
+
+            return "player:" + playerUuid + ":" + colorCode;
+        }
+
+        private static EnderChestKey fromStorageKey(String storageKey) {
+            if (storageKey.startsWith("player:")) {
+                String remaining = storageKey.substring("player:".length());
+                int uuidEndIndex = remaining.indexOf(':');
+
+                if (uuidEndIndex > 0) {
+                    UUID playerUuid = UUID.fromString(remaining.substring(0, uuidEndIndex));
+                    String colorCode = remaining.substring(uuidEndIndex + 1);
+                    return new EnderChestKey(colorCode, playerUuid);
+                }
+            }
+
+            if (storageKey.startsWith("public:")) {
+                return new EnderChestKey(storageKey.substring("public:".length()), null);
+            }
+
+            return new EnderChestKey(storageKey, null);
         }
     }
 }

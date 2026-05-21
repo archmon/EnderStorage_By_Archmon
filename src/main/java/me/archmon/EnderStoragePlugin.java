@@ -7,6 +7,7 @@ import com.hypixel.hytale.server.core.command.system.CommandRegistry;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import me.archmon.commands.EnderStorageBugReport;
+import me.archmon.commands.EnderStorageDebug;
 import me.archmon.commands.EnderStorageModVersion;
 import org.jspecify.annotations.NonNull;
 
@@ -43,6 +44,7 @@ public class EnderStoragePlugin extends JavaPlugin {
         CommandRegistry commandRegistry = this.getCommandRegistry();
         commandRegistry.registerCommand(new EnderStorageModVersion(this.getManifest().getVersion().toString()));
         commandRegistry.registerCommand(new EnderStorageBugReport());
+        commandRegistry.registerCommand(new EnderStorageDebug());
 
         //initialize the Ender storage systems
         JsonObject configFile = this.loadConfig();

@@ -8,3 +8,12 @@ EnderStorage mod from Minecraft to Hytale. I used the videos from Kaupenjoe and 
 in order to get the start of the mod and the Ai from Google.com search was used in
 this mod's creation. I also did heavily use the AI from intellij jetbrains to assist
 me with the development of this mod.
+
+## Current Features
+
+- pocket_DimensionSafe: a private database-backed storage block keyed by placement location.
+- Ender_Chest: planned shared network chest using color-code channels.
+
+## Development Notes
+
+The pocket_DimensionSafe and Ender_Chest storage systems are being rewritten around database-backed inventories.
