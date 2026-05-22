@@ -15,7 +15,7 @@ public class VoidStorageBugReport extends CommandBase {
 
     @Override
     protected void executeSync(@NonNull CommandContext commandContext) {
-        String website = "opps, remind me to add the link";
+        String website = "https://github.com/archmon/VoidStorage_By_Archmon/issues";
         commandContext.sendMessage(Message.raw("Bug reports for the VoidStorage Mod by Archmon can be reported here :" + website));
     }
 }
