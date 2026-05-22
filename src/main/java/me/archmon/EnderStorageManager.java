@@ -18,6 +18,8 @@ import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
 import com.hypixel.hytale.server.core.inventory.container.SimpleItemContainer;
 import com.hypixel.hytale.server.core.inventory.container.filter.FilterActionType;
+import com.hypixel.hytale.server.core.universe.PlayerRef;
+import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.core.util.BsonUtil;
 import org.bson.BsonDocument;
 
@@ -27,7 +29,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
-@SuppressWarnings("removal")
+
 class EnderStorageManager implements EnderStorageApi {
 
     private static final short INVENTORY_SLOT_COUNT = 54;
@@ -91,6 +93,25 @@ class EnderStorageManager implements EnderStorageApi {
         }
     }
 
+    private PlayerRef getPlayerRef(Player player) {
+        if (player == null) {
+            return null;
+        }
+
+        Ref<EntityStore> playerReference = player.getReference();
+
+        if (playerReference == null) {
+            return null;
+        }
+
+        return playerReference.getStore().getComponent(playerReference, PlayerRef.getComponentType());
+    }
+
+    private UUID getPlayerUuid(Player player) {
+        PlayerRef playerRef = this.getPlayerRef(player);
+        return playerRef == null ? null : playerRef.getUuid();
+    }
+
     void openPocketDimensionSafe(Player player, int posX, int posY, int posZ, int rotationIndex, BlockType blockType) {
         if (player == null) {
             return;
@@ -102,7 +123,7 @@ class EnderStorageManager implements EnderStorageApi {
             return;
         }
 
-        UUID ownerUuid = this.getOrCreatePocketDimensionSafeOwner(locationKey, player.getUuid());
+        UUID ownerUuid = this.getOrCreatePocketDimensionSafeOwner(locationKey, this.getPlayerUuid(player));
 
         if (ownerUuid == null) {
             return;
@@ -377,15 +398,21 @@ class EnderStorageManager implements EnderStorageApi {
             String ownerDescription,
             Consumer<String> closeAction
     ) {
-        @SuppressWarnings("rawtypes") Ref playerReference = player.getReference();
+        Ref<EntityStore> playerReference = player.getReference();
 
-        if (playerReference == null || player.getPlayerRef() == null) {
+        if (playerReference == null) {
             return;
         }
 
-        @SuppressWarnings("rawtypes") Store playerReferenceStore = playerReference.getStore();
+        PlayerRef playerRef = this.getPlayerRef(player);
+
+        if (playerRef == null) {
+            return;
+        }
+
+        Store<EntityStore> playerReferenceStore = playerReference.getStore();
         EnderChestWrenchPage wrenchPage = new EnderChestWrenchPage(
-                player.getPlayerRef(),
+                playerRef,
                 blockConfig.colorCode,
                 ownerDescription,
                 () -> this.hasAdamantiteInLockSlot(lockContainer),
@@ -395,7 +422,6 @@ class EnderStorageManager implements EnderStorageApi {
         ContainerWindow lockWindow = new ContainerWindow(lockContainer);
         lockWindow.registerCloseEvent((_) -> closeAction.accept(wrenchPage.getSelectedColorCode()));
 
-        //noinspection unchecked
         player.getPageManager().openCustomPageWithWindows(
                 playerReference,
                 playerReferenceStore,
@@ -413,7 +439,7 @@ class EnderStorageManager implements EnderStorageApi {
             return blockConfig.ownerName;
         }
 
-        if (player != null && blockConfig.ownerUuid.equals(player.getUuid())) {
+        if (player != null && blockConfig.ownerUuid.equals(this.getPlayerUuid(player))) {
             return this.getPlayerDisplayName(player);
         }
 
@@ -541,7 +567,15 @@ class EnderStorageManager implements EnderStorageApi {
             this.returnItemToPlayer(player, lockItem.withQuantity(lockItem.getQuantity() - 1));
         }
 
-        UUID ownerUuid = previousConfig.ownerUuid == null ? player.getUuid() : previousConfig.ownerUuid;
+        UUID playerUuid = this.getPlayerUuid(player);
+
+        if (previousConfig.ownerUuid == null && playerUuid == null) {
+            this.returnItemToPlayer(player, lockItem);
+            this.sendPlayerMessage(player, "Unable to identify player for Ender_Chest ownership.");
+            return;
+        }
+
+        UUID ownerUuid = previousConfig.ownerUuid == null ? playerUuid : previousConfig.ownerUuid;
         String ownerName = this.resolveOwnerName(player, previousConfig, ownerUuid);
         EnderChestBlockConfig newConfig = new EnderChestBlockConfig(colorCode, ownerUuid, ownerName);
         this.saveEnderChestBlockConfig(posX, posY, posZ, newConfig);
@@ -588,7 +622,7 @@ class EnderStorageManager implements EnderStorageApi {
             return previousConfig.ownerName;
         }
 
-        if (player != null && ownerUuid != null && ownerUuid.equals(player.getUuid())) {
+        if (player != null && ownerUuid != null && ownerUuid.equals(this.getPlayerUuid(player))) {
             return this.getPlayerDisplayName(player);
         }
 
@@ -637,7 +671,7 @@ class EnderStorageManager implements EnderStorageApi {
                 return true;
             }
 
-            if (ownerUuid.equals(player.getUuid())) {
+            if (ownerUuid.equals(this.getPlayerUuid(player))) {
                 return true;
             }
 
@@ -681,7 +715,11 @@ class EnderStorageManager implements EnderStorageApi {
             UUID existingOwnerUuid = this.dbJsonObject.getPocketDimensionSafeOwner(locationKey);
 
             if (existingOwnerUuid == null) {
-                this.dbJsonObject.savePocketDimensionSafeInventory(locationKey, player.getUuid(), "{}");
+                UUID playerUuid = this.getPlayerUuid(player);
+
+                if (playerUuid != null) {
+                    this.dbJsonObject.savePocketDimensionSafeInventory(locationKey, playerUuid, "{}");
+                }
             }
         } catch (Exception errCatch) {
             System.err.println("[EnderStorage] Failed to register placed pocket_DimensionSafe at " + locationKey + ": " + errCatch.getMessage());
@@ -702,7 +740,7 @@ class EnderStorageManager implements EnderStorageApi {
                 return true;
             }
 
-            if (ownerUuid.equals(player.getUuid())) {
+            if (ownerUuid.equals(this.getPlayerUuid(player))) {
                 return true;
             }
 
