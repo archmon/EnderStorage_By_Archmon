@@ -61,13 +61,13 @@ class DatabaseHandler {
                     throw new SQLException("SQLite JDBC Driver not found.", errorClassNotFound);
                 }
 
-                File fileLocation = new File("mods/archmon_voidStorage");
+                File fileLocation = new File("mods/archmon_VoidStorage");
                 if (!fileLocation.exists()) {
                     //noinspection ResultOfMethodCallIgnored
                     fileLocation.mkdirs();
                 }
 
-                String url = "jdbc:sqlite:mods/archmon_voidStorage/voidStorage_By_Archmon.db";
+                String url = "jdbc:sqlite:mods/archmon_VoidStorage/voidStorage_By_Archmon.db";
                 this.connection = DriverManager.getConnection(url);
             }
 

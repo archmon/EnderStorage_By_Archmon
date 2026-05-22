@@ -1,3 +1,6 @@
+import java.nio.file.Files
+import java.nio.file.Paths
+
 plugins {
     `maven-publish`
     id("hytale-mod") version "0.+"
@@ -116,11 +119,39 @@ val syncAssets = tasks.register<Copy>("syncAssets") {
     }
 }
 
+val ensureAssetPackLink = tasks.register("ensureAssetPackLink") {
+    group = "hytale"
+    description = "Ensures the built VoidStorage asset pack is visible to the asset editor."
+
+    doLast {
+        val modsDir = layout.projectDirectory.dir("run/mods").asFile.toPath()
+        val link = modsDir.resolve("VoidStorage")
+        val target = Paths.get("../../build/resources/main")
+
+        Files.createDirectories(modsDir)
+
+        if (Files.isSymbolicLink(link)) {
+            if (Files.readSymbolicLink(link) == target) {
+                return@doLast
+            }
+            Files.delete(link)
+        }
+
+        if (Files.exists(link)) {
+            logger.warn("Cannot create asset pack link because '$link' already exists and is not a symlink.")
+            return@doLast
+        }
+
+        Files.createSymbolicLink(link, target)
+    }
+}
+
 afterEvaluate {
     // Now Gradle will find it, because the plugin has finished working
     val targetTask = tasks.findByName("runServer") ?: tasks.findByName("server")
 
     if (targetTask != null) {
+        targetTask.dependsOn(ensureAssetPackLink)
         targetTask.finalizedBy(syncAssets)
         logger.lifecycle("✅ specific task '${targetTask.name}' hooked for auto-sync.")
     } else {
