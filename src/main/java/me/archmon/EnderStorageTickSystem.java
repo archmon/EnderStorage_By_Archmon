@@ -12,11 +12,9 @@ import org.jspecify.annotations.NonNull;
 
 class EnderStorageTickSystem extends EntityTickingSystem<EntityStore> {
 
-    private final EnderStorageManager manager;
     private static boolean apiProbed = false;
 
     EnderStorageTickSystem(EnderStorageManager manager) {
-        this.manager = manager;
     }
 
     @Override
