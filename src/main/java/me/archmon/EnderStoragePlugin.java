@@ -88,9 +88,9 @@ public class EnderStoragePlugin extends JavaPlugin {
     }
 
     // Allows other plugins to access only the supported EnderStorage API surface.
-    public static EnderStorageApi getEnderStorageManager() {
+    /*public static EnderStorageApi getEnderStorageManager() {
         return manager;
-    }
+    }*/
 
     private JsonObject loadConfig() {
         try {

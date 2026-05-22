@@ -13,6 +13,7 @@ import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.entity.entities.player.pages.InteractiveCustomUIPage;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import org.jspecify.annotations.NonNull;
 
 import java.util.function.BooleanSupplier;
 
@@ -45,10 +46,10 @@ class EnderChestWrenchPage extends InteractiveCustomUIPage<EnderChestWrenchPage.
 
     @Override
     public void build(
-            Ref<EntityStore> playerReference,
+            @NonNull Ref<EntityStore> playerReference,
             UICommandBuilder commandBuilder,
-            UIEventBuilder eventBuilder,
-            Store<EntityStore> store
+            @NonNull UIEventBuilder eventBuilder,
+            @NonNull Store<EntityStore> store
     ) {
         commandBuilder.append(PAGE_PATH);
         this.bindEvents(eventBuilder);
@@ -57,8 +58,8 @@ class EnderChestWrenchPage extends InteractiveCustomUIPage<EnderChestWrenchPage.
 
     @Override
     public void handleDataEvent(
-            Ref<EntityStore> playerReference,
-            Store<EntityStore> store,
+            @NonNull Ref<EntityStore> playerReference,
+            @NonNull Store<EntityStore> store,
             WrenchPageEventData eventData
     ) {
         if ("InsertAdamantite".equals(eventData.action) && this.insertAdamantiteAction != null) {

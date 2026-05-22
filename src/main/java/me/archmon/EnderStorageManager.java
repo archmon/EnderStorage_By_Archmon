@@ -231,8 +231,7 @@ class EnderStorageManager implements EnderStorageApi {
         }
     }
 
-    //not sure when this was added, but it's to be used for other mods to hook into the pocket dimension safe inventory I think
-    ItemContainer removePocketDimensionSafeAndReturnContents(int posX, int posY, int posZ) {
+    /*ItemContainer removePocketDimensionSafeAndReturnContents(int posX, int posY, int posZ) {
         String locationKey = this.createPocketDimensionSafeLocationKey(posX, posY, posZ);
         ItemContainer itemContainer = this.loadPocketDimensionSafeContainer(locationKey);
 
@@ -253,7 +252,7 @@ class EnderStorageManager implements EnderStorageApi {
 
         String locationKey = this.createPocketDimensionSafeLocationKey(posX, posY, posZ);
         return this.canAccessPocketDimensionSafe(player, locationKey);
-    }
+    }*/
 
     void saveAll() {
         for (Map.Entry<String, ItemContainer> keyValue : this.loadedPocketDimensionSafeContainers.entrySet()) {
@@ -572,6 +571,7 @@ class EnderStorageManager implements EnderStorageApi {
                     ? ENDER_CHEST_PUBLIC_VISUAL_STATE
                     : ENDER_CHEST_PRIVATE_VISUAL_STATE;
 
+            assert currentBlockType != null;
             player.getWorld().setBlockInteractionState(
                     new Vector3i(posX, posY, posZ),
                     currentBlockType,
@@ -713,7 +713,7 @@ class EnderStorageManager implements EnderStorageApi {
         }
     }
 
-    UUID getPocketDimensionSafeOwner(int posX, int posY, int posZ) {
+    /*UUID getPocketDimensionSafeOwner(int posX, int posY, int posZ) {
         String locationKey = this.createPocketDimensionSafeLocationKey(posX, posY, posZ);
 
         try {
@@ -722,7 +722,7 @@ class EnderStorageManager implements EnderStorageApi {
             System.err.println("[EnderStorage] Failed to get pocket_DimensionSafe owner for " + locationKey + ": " + errCatch.getMessage());
             return null;
         }
-    }
+    }*/
 
     private boolean isServerOperator(Player player) {
         return player != null
@@ -933,7 +933,7 @@ class EnderStorageManager implements EnderStorageApi {
         }
     }
 
-    boolean isPocketDimensionSafeEmpty(int posX, int posY, int posZ) {
+    /*boolean isPocketDimensionSafeEmpty(int posX, int posY, int posZ) {
         String locationKey = this.createPocketDimensionSafeLocationKey(posX, posY, posZ);
         ItemContainer itemContainer = this.loadPocketDimensionSafeContainer(locationKey);
 
@@ -948,7 +948,7 @@ class EnderStorageManager implements EnderStorageApi {
         }
 
         return true;
-    }
+    }*/
 
     ItemContainer getPocketDimensionSafeContents(int posX, int posY, int posZ) {
         String locationKey = this.createPocketDimensionSafeLocationKey(posX, posY, posZ);
