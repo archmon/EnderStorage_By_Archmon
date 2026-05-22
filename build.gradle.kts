@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "me.archmon"
-version = "0.0.5"
+version = "0.1.1"
 val javaVersion = 25
 
 repositories {
