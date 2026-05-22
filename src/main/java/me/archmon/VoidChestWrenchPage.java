@@ -17,9 +17,9 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.function.BooleanSupplier;
 
-class EnderChestWrenchPage extends InteractiveCustomUIPage<EnderChestWrenchPage.WrenchPageEventData> {
+class VoidChestWrenchPage extends InteractiveCustomUIPage<VoidChestWrenchPage.WrenchPageEventData> {
 
-    private static final String PAGE_PATH = "Pages/EnderChestWrenchPage.ui";
+    private static final String PAGE_PATH = "Pages/VoidChestWrenchPage.ui";
     private static final String ADAMANTITE_INGOT_ITEM_ID = "Ingredient_Bar_Adamantite";
 
     private final String ownerDescription;
@@ -28,7 +28,7 @@ class EnderChestWrenchPage extends InteractiveCustomUIPage<EnderChestWrenchPage.
     private final Runnable insertAdamantiteAction;
     private final Runnable removeAdamantiteAction;
 
-    EnderChestWrenchPage(
+    VoidChestWrenchPage(
             PlayerRef playerRef,
             String colorCode,
             String ownerDescription,
@@ -142,13 +142,13 @@ class EnderChestWrenchPage extends InteractiveCustomUIPage<EnderChestWrenchPage.
     }
 
     private void writeColorState(UICommandBuilder commandBuilder, String namePath, String swatchPath, int colorIndex) {
-        EnderChestColor color = EnderChestColor.byIndex(colorIndex);
+        VoidChestColor color = VoidChestColor.byIndex(colorIndex);
         commandBuilder.set(namePath + ".Text", color.getDisplayName());
         commandBuilder.set(swatchPath + ".Background", color.getHexColor());
     }
 
     private void cycleColor(int colorPosition, int direction) {
-        int colorCount = EnderChestColor.count();
+        int colorCount = VoidChestColor.count();
         this.selectedColors[colorPosition] = Math.floorMod(this.selectedColors[colorPosition] + direction, colorCount);
     }
 
@@ -178,7 +178,7 @@ class EnderChestWrenchPage extends InteractiveCustomUIPage<EnderChestWrenchPage.
         try {
             int colorIndex = Integer.parseInt(value);
 
-            if (colorIndex >= 0 && colorIndex < EnderChestColor.count()) {
+            if (colorIndex >= 0 && colorIndex < VoidChestColor.count()) {
                 return colorIndex;
             }
         } catch (NumberFormatException ignored) {

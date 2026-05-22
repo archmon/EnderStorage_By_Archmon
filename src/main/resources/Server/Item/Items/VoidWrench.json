@@ -1,12 +1,12 @@
 {
   "TranslationProperties": {
-    "Name": "server.items.EnderWrench.name",
-    "Description": "server.items.EnderWrench.description"
+    "Name": "server.items.VoidWrench.name",
+    "Description": "server.items.VoidWrench.description"
   },
   "Categories": [
     "Items.Weapons"
   ],
-  "Icon": "Icons/ItemsGenerated/EnderWrench.png",
+  "Icon": "Icons/ItemsGenerated/VoidWrench.png",
   "Quality": "Technical",
   "ItemLevel": 10,
   "Recipe": {
@@ -36,8 +36,8 @@
     ],
     "RequiredMemoriesLevel": 3
   },
-  "Model": "Resources/EnderWrench.blockymodel",
-  "Texture": "Resources/EnderWrench.png",
+  "Model": "Resources/VoidWrench.blockymodel",
+  "Texture": "Resources/VoidWrench.png",
   "PlayerAnimationsId": "Axe",
   "Utility": {
     "Compatible": true

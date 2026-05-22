@@ -1,14 +1,14 @@
 {
   "TranslationProperties": {
-    "Name": "server.items.Ender_Chest.name",
-    "Description": "server.items.Ender_Chest.description"
+    "Name": "server.items.VoidChest.name",
+    "Description": "server.items.VoidChest.description"
   },
   "PlayerAnimationsId": "Block",
   "Categories": [
     "Furniture.Containers"
   ],
   "Set": "Furniture_Adventure",
-  "Icon": "Icons/ItemsGenerated/Ender_Chest.png",
+  "Icon": "Icons/ItemsGenerated/VoidChest.png",
   "Recipe": {
     "TimeSeconds": 5,
     "KnowledgeRequired": false,
@@ -40,10 +40,10 @@
   "BlockType": {
     "BlockParticleSetId": "Wood",
     "BlockSoundSetId": "Wood",
-    "CustomModel": "Blocks/Ender_Chest.blockymodel",
+    "CustomModel": "Blocks/VoidChest.blockymodel",
     "CustomModelTexture": [
       {
-        "Texture": "BlockTextures/EnderStorage_Chests_Texture.png",
+        "Texture": "BlockTextures/VoidStorage_Chests_Texture.png",
         "Weight": 1
       }
     ],
@@ -72,23 +72,23 @@
           "CustomModelAnimation": "Blocks/Animations/Chest/Chest_Open.blockyanim"
         },
         "PublicNetwork": {
-          "CustomModel": "Blocks/Ender_Chest.blockymodel",
+          "CustomModel": "Blocks/VoidChest.blockymodel",
           "CustomModelTexture": [
             {
-              "Texture": "BlockTextures/EnderStorage_Chests_Texture.png",
+              "Texture": "BlockTextures/VoidStorage_Chests_Texture.png",
               "Weight": 1
             }
           ]
         },
         "PrivateNetwork": {
-          "CustomModel": "Blocks/Ender_Chest.blockymodel",
+          "CustomModel": "Blocks/VoidChest.blockymodel",
           "CustomModelTexture": [
             {
-              "Texture": "BlockTextures/EnderStorage_Chests_Texture.png",
+              "Texture": "BlockTextures/VoidStorage_Chests_Texture.png",
               "Weight": 1
             }
           ],
-          "CustomModelAnimation": "Blocks/Animations/EnderStorage/Ender_Chest_Lock_Private.blockyanim"
+          "CustomModelAnimation": "Blocks/Animations/VoidStorage/VoidChest_Lock_Private.blockyanim"
         }
       }
     },

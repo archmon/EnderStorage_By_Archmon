@@ -27,11 +27,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-class EnderStorageBreakBlockSystem extends EntityEventSystem<EntityStore, BreakBlockEvent> {
+class VoidStorageBreakBlockSystem extends EntityEventSystem<EntityStore, BreakBlockEvent> {
 
-    private final EnderStorageManager manager;
+    private final VoidStorageManager manager;
 
-    EnderStorageBreakBlockSystem(EnderStorageManager manager) {
+    VoidStorageBreakBlockSystem(VoidStorageManager manager) {
         super(BreakBlockEvent.class);
         this.manager = manager;
     }
@@ -52,17 +52,17 @@ class EnderStorageBreakBlockSystem extends EntityEventSystem<EntityStore, BreakB
     ) {
         BlockType blockType = event.getBlockType();
 
-        if (this.manager.isEnderChestBlock(blockType)) {
+        if (this.manager.isVoidChestBlock(blockType)) {
             Player player = this.getPlayerFromEvent(id, store);
             Vector3i targetBlock = event.getTargetBlock();
 
             List<ItemStack> itemStacks = new ArrayList<>();
 
             if (!this.isCreative(player)) {
-                itemStacks.add(this.manager.createEnderChestItemStack());
+                itemStacks.add(this.manager.createVoidChestItemStack());
             }
 
-            ItemStack lockItem = this.manager.getEnderChestBlockLockItem(
+            ItemStack lockItem = this.manager.getVoidChestBlockLockItem(
                     targetBlock.x,
                     targetBlock.y,
                     targetBlock.z
@@ -77,7 +77,7 @@ class EnderStorageBreakBlockSystem extends EntityEventSystem<EntityStore, BreakB
                 return;
             }
 
-            this.manager.deleteEnderChestBlockConfig(
+            this.manager.deleteVoidChestBlockConfig(
                     targetBlock.x,
                     targetBlock.y,
                     targetBlock.z
@@ -176,7 +176,7 @@ class EnderStorageBreakBlockSystem extends EntityEventSystem<EntityStore, BreakB
         );
 
         if (dropHolders.length != itemStacks.size()) {
-            System.err.println("[EnderStorage] Failed to generate all item drops at " + dropPosition
+            System.err.println("[VoidStorage] Failed to generate all item drops at " + dropPosition
                     + ". Expected " + itemStacks.size() + ", generated " + dropHolders.length + ".");
             return false;
         }

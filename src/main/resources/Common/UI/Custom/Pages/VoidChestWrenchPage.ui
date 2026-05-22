@@ -28,7 +28,7 @@ $C.@PageOverlay {
 
     #Title {
       $C.@Title {
-        @Text = "Ender Chest";
+        @Text = "Void Chest";
       }
     }
 

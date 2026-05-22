@@ -43,7 +43,7 @@
     "CustomModel": "Blocks/pocket_DimensionSafe.blockymodel",
     "CustomModelTexture": [
       {
-        "Texture": "BlockTextures/EnderStorage_Chests_Texture.png",
+        "Texture": "BlockTextures/VoidStorage_Chests_Texture.png",
         "Weight": 1
       }
     ],

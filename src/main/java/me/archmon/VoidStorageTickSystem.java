@@ -10,11 +10,11 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.jspecify.annotations.NonNull;
 
 
-class EnderStorageTickSystem extends EntityTickingSystem<EntityStore> {
+class VoidStorageTickSystem extends EntityTickingSystem<EntityStore> {
 
     private static boolean apiProbed = false;
 
-    EnderStorageTickSystem(EnderStorageManager manager) {
+    VoidStorageTickSystem(VoidStorageManager manager) {
     }
 
     @Override
@@ -27,7 +27,7 @@ class EnderStorageTickSystem extends EntityTickingSystem<EntityStore> {
     public void tick(float v, int i, @NonNull ArchetypeChunk<EntityStore> archetypeChunk, @NonNull Store<EntityStore> store, @NonNull CommandBuffer<EntityStore> commandBuffer) {
         if (!apiProbed) {
             apiProbed = true;
-            EnderStoragePlugin.onFirstTick();
+            VoidStoragePlugin.onFirstTick();
         }
     }
 }

@@ -1,6 +1,6 @@
 package me.archmon;
 
-enum EnderChestColor {
+enum VoidChestColor {
     WHITE("White", "#f9fffe"),
     LIGHT_GRAY("Light Gray", "#9d9d97"),
     GRAY("Gray", "#474f52"),
@@ -18,12 +18,12 @@ enum EnderChestColor {
     MAGENTA("Magenta", "#c74ebd"),
     PINK("Pink", "#f38baa");
 
-    private static final EnderChestColor[] VALUES = values();
+    private static final VoidChestColor[] VALUES = values();
 
     private final String displayName;
     private final String hexColor;
 
-    EnderChestColor(String displayName, String hexColor) {
+    VoidChestColor(String displayName, String hexColor) {
         this.displayName = displayName;
         this.hexColor = hexColor;
     }
@@ -40,7 +40,7 @@ enum EnderChestColor {
         return VALUES.length;
     }
 
-    public static EnderChestColor byIndex(int index) {
+    public static VoidChestColor byIndex(int index) {
         if (index < 0 || index >= VALUES.length) {
             return WHITE;
         }

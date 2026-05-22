@@ -6,8 +6,8 @@ import com.google.gson.JsonParser;
 import com.hypixel.hytale.server.core.command.system.CommandRegistry;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
-import me.archmon.commands.EnderStorageBugReport;
-import me.archmon.commands.EnderStorageModVersion;
+import me.archmon.commands.VoidStorageBugReport;
+import me.archmon.commands.VoidStorageModVersion;
 import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
@@ -18,12 +18,12 @@ import java.nio.file.*;
 import java.util.Map;
 
 
-public class EnderStoragePlugin extends JavaPlugin {
+public class VoidStoragePlugin extends JavaPlugin {
 
-    private static EnderStoragePlugin instance;
-    private static EnderStorageManager manager;
+    private static VoidStoragePlugin instance;
+    private static VoidStorageManager manager;
 
-    public EnderStoragePlugin(@NonNull JavaPluginInit init) {
+    public VoidStoragePlugin(@NonNull JavaPluginInit init) {
         super(init);
     }
 
@@ -41,19 +41,19 @@ public class EnderStoragePlugin extends JavaPlugin {
 
         //Initialize commands
         CommandRegistry commandRegistry = this.getCommandRegistry();
-        commandRegistry.registerCommand(new EnderStorageModVersion(this.getManifest().getVersion().toString()));
-        commandRegistry.registerCommand(new EnderStorageBugReport());
+        commandRegistry.registerCommand(new VoidStorageModVersion(this.getManifest().getVersion().toString()));
+        commandRegistry.registerCommand(new VoidStorageBugReport());
 
-        //initialize the Ender storage systems
+        //initialize the Void storage systems
         JsonObject configFile = this.loadConfig();
-        manager = new EnderStorageManager(configFile);
-        EnderStorageTickSystem enderStorageTickSystem = new EnderStorageTickSystem(manager);
-        manager.setTickSystem(enderStorageTickSystem);
-        this.getEntityStoreRegistry().registerSystem(enderStorageTickSystem);
-        this.getEntityStoreRegistry().registerSystem(new EnderStorageUseBlockSystem(manager));
-        this.getEntityStoreRegistry().registerSystem(new EnderStoragePlaceBlockSystem(manager));
-        this.getEntityStoreRegistry().registerSystem(new EnderStorageDamageBlockSystem(manager));
-        this.getEntityStoreRegistry().registerSystem(new EnderStorageBreakBlockSystem(manager));
+        manager = new VoidStorageManager(configFile);
+        VoidStorageTickSystem voidStorageTickSystem = new VoidStorageTickSystem(manager);
+        manager.setTickSystem(voidStorageTickSystem);
+        this.getEntityStoreRegistry().registerSystem(voidStorageTickSystem);
+        this.getEntityStoreRegistry().registerSystem(new VoidStorageUseBlockSystem(manager));
+        this.getEntityStoreRegistry().registerSystem(new VoidStoragePlaceBlockSystem(manager));
+        this.getEntityStoreRegistry().registerSystem(new VoidStorageDamageBlockSystem(manager));
+        this.getEntityStoreRegistry().registerSystem(new VoidStorageBreakBlockSystem(manager));
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             if (manager != null) {
@@ -83,12 +83,12 @@ public class EnderStoragePlugin extends JavaPlugin {
                 }
             }
         } catch (Exception err){
-            System.err.println("[EnderStorage] Failed to extract README.txt: " + err.getMessage());
+            System.err.println("[VoidStorage] Failed to extract README.txt: " + err.getMessage());
         }
     }
 
-    // Allows other plugins to access only the supported EnderStorage API surface.
-    /*public static EnderStorageApi getEnderStorageManager() {
+    // Allows other plugins to access only the supported VoidStorage API surface.
+    /*public static VoidStorageApi getVoidStorageManager() {
         return manager;
     }*/
 
@@ -107,13 +107,13 @@ public class EnderStoragePlugin extends JavaPlugin {
                     configInput = true;
                 }
 
-                if (!configJson.has("enableCrafting_Ender_Chest")){
-                    configJson.addProperty("enableCrafting_Ender_Chest", true);
+                if (!configJson.has("enableCrafting_VoidChest")){
+                    configJson.addProperty("enableCrafting_VoidChest", true);
                     configInput = true;
                 }
 
-                if (!configJson.has("enableCrafting_EnderWrench")){
-                    configJson.addProperty("enableCrafting_EnderWrench", true);
+                if (!configJson.has("enableCrafting_VoidWrench")){
+                    configJson.addProperty("enableCrafting_VoidWrench", true);
                     configInput = true;
                 }
 
@@ -137,8 +137,8 @@ public class EnderStoragePlugin extends JavaPlugin {
     private JsonObject createDefaultConfig(Path configFile) throws IOException {
         JsonObject configJson = new JsonObject();
         configJson.addProperty("enableCrafting_pocket_DimensionSafe", true);
-        configJson.addProperty("enableCrafting_Ender_Chest", true);
-        configJson.addProperty("enableCrafting_EnderWrench", true);
+        configJson.addProperty("enableCrafting_VoidChest", true);
+        configJson.addProperty("enableCrafting_VoidWrench", true);
         configJson.add("database", this.createDefaultDbConfig());
         Files.createDirectories(configFile.getParent());
         Files.writeString(configFile, (new GsonBuilder()).setPrettyPrinting().create().toJson(configJson));
@@ -150,7 +150,7 @@ public class EnderStoragePlugin extends JavaPlugin {
         configJson.addProperty("type", "sqlite");
         configJson.addProperty("host", "localhost");
         configJson.addProperty("port", 5433);
-        configJson.addProperty("name", "EnderStorage_By_Archmon");
+        configJson.addProperty("name", "VoidStorage_By_Archmon");
         configJson.addProperty("user", "postgres");
         configJson.addProperty("password","password");
         return configJson;
@@ -159,10 +159,10 @@ public class EnderStoragePlugin extends JavaPlugin {
     //There is a method of the same name above that has an input of a path variable
     private JsonObject createDefaultConfig() {
         JsonObject configJson = new JsonObject();
-        configJson.addProperty("_comment", "EnderStorage Configuration");
+        configJson.addProperty("_comment", "VoidStorage Configuration");
         configJson.addProperty("enableCrafting_pocket_DimensionSafe", true);
-        configJson.addProperty("enableCrafting_Ender_Chest", true);
-        configJson.addProperty("enableCrafting_EnderWrench", true);
+        configJson.addProperty("enableCrafting_VoidChest", true);
+        configJson.addProperty("enableCrafting_VoidWrench", true);
         configJson.add("database", this.createDefaultDbConfig());
         return configJson;
     }
@@ -178,13 +178,13 @@ public class EnderStoragePlugin extends JavaPlugin {
         } else {
             craftingBoolean = true;
         }
-        if (configJson.has("enableCrafting_Ender_Chest")) {
-            craftingBoolean2 = configJson.get("enableCrafting_Ender_Chest").getAsBoolean();
+        if (configJson.has("enableCrafting_VoidChest")) {
+            craftingBoolean2 = configJson.get("enableCrafting_VoidChest").getAsBoolean();
         } else {
             craftingBoolean2 = true;
         }
-        if (configJson.has("enableCrafting_EnderWrench")) {
-            craftingBoolean3 = configJson.get("enableCrafting_EnderWrench").getAsBoolean();
+        if (configJson.has("enableCrafting_VoidWrench")) {
+            craftingBoolean3 = configJson.get("enableCrafting_VoidWrench").getAsBoolean();
         } else {
             craftingBoolean3 = true;
         }
@@ -193,10 +193,10 @@ public class EnderStoragePlugin extends JavaPlugin {
             this.removeRecipe("pocket_DimensionSafe");
         }
         if (!craftingBoolean2){
-            this.removeRecipe("Ender_Chest");
+            this.removeRecipe("VoidChest");
         }
         if (!craftingBoolean3){
-            this.removeRecipe("EnderWrench");
+            this.removeRecipe("VoidWrench");
         }
     }
 
@@ -247,12 +247,12 @@ public class EnderStoragePlugin extends JavaPlugin {
                 removedRecipeMethod.invoke(workbenchObject, removedRecipe);
             }
         } catch (Exception err) {
-            System.err.println("[EnderStorage] Failed to remove recipe for " + blockName + ": " + err.getMessage());
+            System.err.println("[VoidStorage] Failed to remove recipe for " + blockName + ": " + err.getMessage());
         }
     }
 
     private Path findModFolder() {
-        return Paths.get("mods/archmon_EnderStorage");
+        return Paths.get("mods/archmon_VoidStorage");
     }
 
 

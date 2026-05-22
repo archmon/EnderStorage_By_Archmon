@@ -14,11 +14,11 @@ import com.hypixel.hytale.server.core.event.events.ecs.DamageBlockEvent;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.jspecify.annotations.NonNull;
 
-class EnderStorageDamageBlockSystem extends EntityEventSystem<EntityStore, DamageBlockEvent> {
+class VoidStorageDamageBlockSystem extends EntityEventSystem<EntityStore, DamageBlockEvent> {
 
-    private final EnderStorageManager manager;
+    private final VoidStorageManager manager;
 
-    EnderStorageDamageBlockSystem(EnderStorageManager manager) {
+    VoidStorageDamageBlockSystem(VoidStorageManager manager) {
         super(DamageBlockEvent.class);
         this.manager = manager;
     }

@@ -31,24 +31,24 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 
-class EnderStorageManager implements EnderStorageApi {
+class VoidStorageManager implements VoidStorageApi {
 
     private static final short INVENTORY_SLOT_COUNT = 54;
-    private static final short ENDER_CHEST_LOCK_SLOT_COUNT = 1;
-    private static final String DEFAULT_ENDER_CHEST_COLOR_CODE = "0:0:0";
-    private static final String ENDER_CHEST_ITEM_ID = "Ender_Chest";
-    private static final String ENDER_WRENCH_ITEM_ID = "EnderWrench";
+    private static final short VOID_CHEST_LOCK_SLOT_COUNT = 1;
+    private static final String DEFAULT_VOID_CHEST_COLOR_CODE = "0:0:0";
+    private static final String VOID_CHEST_ITEM_ID = "VoidChest";
+    private static final String VOID_WRENCH_ITEM_ID = "VoidWrench";
     private static final String ADAMANTITE_INGOT_ITEM_ID = "Ingredient_Bar_Adamantite";
-    private static final String ENDER_CHEST_PUBLIC_VISUAL_STATE = "PublicNetwork";
-    private static final String ENDER_CHEST_PRIVATE_VISUAL_STATE = "PrivateNetwork";
+    private static final String VOID_CHEST_PUBLIC_VISUAL_STATE = "PublicNetwork";
+    private static final String VOID_CHEST_PRIVATE_VISUAL_STATE = "PrivateNetwork";
 
     private final Map<String, ItemContainer> loadedPocketDimensionSafeContainers = new ConcurrentHashMap<>();
-    private final Map<String, ItemContainer> loadedEnderChestContainers = new ConcurrentHashMap<>();
+    private final Map<String, ItemContainer> loadedVoidChestContainers = new ConcurrentHashMap<>();
 
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private final DatabaseHandler dbJsonObject;
 
-    EnderStorageManager(JsonObject dbConfigFile) {
+    VoidStorageManager(JsonObject dbConfigFile) {
         JsonObject databaseJsonObject;
 
         if (dbConfigFile != null && dbConfigFile.has("database")) {
@@ -62,14 +62,14 @@ class EnderStorageManager implements EnderStorageApi {
         try {
             this.dbJsonObject.dbConnect();
         } catch (Exception databaseFailedConnect) {
-            System.err.println("[EnderStorage] Failed to connect to database: " + databaseFailedConnect.getMessage());
+            System.err.println("[VoidStorage] Failed to connect to database: " + databaseFailedConnect.getMessage());
         }
     }
 
-    boolean isEnderChestBlock(BlockType blockType) {
+    boolean isVoidChestBlock(BlockType blockType) {
         return blockType != null
                 && blockType.getId() != null
-                && blockType.getId().contains("Ender_Chest");
+                && blockType.getId().contains("VoidChest");
     }
 
     boolean isPocket_DimensionSafeBlock(BlockType blockType) {
@@ -78,14 +78,14 @@ class EnderStorageManager implements EnderStorageApi {
                 && blockType.getId().contains("pocket_DimensionSafe");
     }
 
-    boolean isEnderWrenchItem(ItemStack itemStack) {
+    boolean isVoidWrenchItem(ItemStack itemStack) {
         return itemStack != null
                 && !itemStack.isEmpty()
-                && ENDER_WRENCH_ITEM_ID.equals(itemStack.getItemId());
+                && VOID_WRENCH_ITEM_ID.equals(itemStack.getItemId());
     }
 
-    ItemStack createEnderChestItemStack() {
-        return new ItemStack(ENDER_CHEST_ITEM_ID, 1);
+    ItemStack createVoidChestItemStack() {
+        return new ItemStack(VOID_CHEST_ITEM_ID, 1);
     }
 
     private void sendPlayerMessage(Player player, String message) {
@@ -163,13 +163,13 @@ class EnderStorageManager implements EnderStorageApi {
         );
     }
 
-    void openSharedEnderChest(Player player, int posX, int posY, int posZ, int rotationIndex, BlockType blockType) {
+    void openSharedVoidChest(Player player, int posX, int posY, int posZ, int rotationIndex, BlockType blockType) {
         if (player == null) {
             return;
         }
 
-        EnderChestBlockConfig blockConfig = this.getOrCreateEnderChestBlockConfig(posX, posY, posZ);
-        ItemContainer itemContainer = this.getEnderChestContainer(blockConfig.colorCode, blockConfig.ownerUuid);
+        VoidChestBlockConfig blockConfig = this.getOrCreateVoidChestBlockConfig(posX, posY, posZ);
+        ItemContainer itemContainer = this.getVoidChestContainer(blockConfig.colorCode, blockConfig.ownerUuid);
 
         this.openContainerForPlayer(
                 player,
@@ -181,19 +181,19 @@ class EnderStorageManager implements EnderStorageApi {
                 blockType,
                 true,
                 () -> {
-                    this.saveEnderChestContainer(blockConfig.colorCode, blockConfig.ownerUuid, itemContainer);
-                    this.syncEnderChestVisualState(player, posX, posY, posZ, blockConfig);
+                    this.saveVoidChestContainer(blockConfig.colorCode, blockConfig.ownerUuid, itemContainer);
+                    this.syncVoidChestVisualState(player, posX, posY, posZ, blockConfig);
                 }
         );
     }
 
-    void openEnderChestWrenchWindow(Player player, int posX, int posY, int posZ) {
+    void openVoidChestWrenchWindow(Player player, int posX, int posY, int posZ) {
         if (player == null) {
             return;
         }
 
-        EnderChestBlockConfig blockConfig = this.getOrCreateEnderChestBlockConfig(posX, posY, posZ);
-        SimpleItemContainer lockContainer = new SimpleItemContainer(ENDER_CHEST_LOCK_SLOT_COUNT);
+        VoidChestBlockConfig blockConfig = this.getOrCreateVoidChestBlockConfig(posX, posY, posZ);
+        SimpleItemContainer lockContainer = new SimpleItemContainer(VOID_CHEST_LOCK_SLOT_COUNT);
         lockContainer.setSlotFilter(
                 FilterActionType.ADD,
                 (short) 0,
@@ -208,14 +208,14 @@ class EnderStorageManager implements EnderStorageApi {
             lockContainer.setItemStackForSlot((short) 0, new ItemStack(ADAMANTITE_INGOT_ITEM_ID, 1));
         }
 
-        String ownerDescription = this.describeEnderChestOwner(player, blockConfig);
+        String ownerDescription = this.describeVoidChestOwner(player, blockConfig);
 
-        this.openEnderChestWrenchPage(
+        this.openVoidChestWrenchPage(
                 player,
                 lockContainer,
                 blockConfig,
                 ownerDescription,
-                selectedColorCode -> this.applyEnderChestLockWindow(
+                selectedColorCode -> this.applyVoidChestLockWindow(
                         player,
                         posX,
                         posY,
@@ -227,25 +227,25 @@ class EnderStorageManager implements EnderStorageApi {
         );
     }
 
-    private ItemContainer getSharedEnderChestContainer() {
-        return this.getEnderChestContainer(DEFAULT_ENDER_CHEST_COLOR_CODE, null);
+    private ItemContainer getSharedVoidChestContainer() {
+        return this.getVoidChestContainer(DEFAULT_VOID_CHEST_COLOR_CODE, null);
     }
 
-    //this is to be used for other mods to hook into the enderchest inventory
+    //this is to be used for other mods to hook into the voidchest inventory
     @Override
-    public ItemContainer getEnderChestInventoryForAutomation() {
-        return this.getSharedEnderChestContainer();
+    public ItemContainer getVoidChestInventoryForAutomation() {
+        return this.getSharedVoidChestContainer();
     }
 
-    //this is to be used for other mods to hook into the enderchest inventory
+    //this is to be used for other mods to hook into the Voidchest inventory
     @Override
-    public void saveEnderChestInventory() {
-        ItemContainer itemContainer = this.getSharedEnderChestContainer();
-        this.saveEnderChestContainer(DEFAULT_ENDER_CHEST_COLOR_CODE, null, itemContainer);
+    public void saveVoidChestInventory() {
+        ItemContainer itemContainer = this.getSharedVoidChestContainer();
+        this.saveVoidChestContainer(DEFAULT_VOID_CHEST_COLOR_CODE, null, itemContainer);
     }
 
-    ItemStack getEnderChestBlockLockItem(int posX, int posY, int posZ) {
-        EnderChestBlockConfig blockConfig = this.getOrCreateEnderChestBlockConfig(posX, posY, posZ);
+    ItemStack getVoidChestBlockLockItem(int posX, int posY, int posZ) {
+        VoidChestBlockConfig blockConfig = this.getOrCreateVoidChestBlockConfig(posX, posY, posZ);
 
         if (blockConfig.ownerUuid == null) {
             return null;
@@ -264,13 +264,13 @@ class EnderStorageManager implements EnderStorageApi {
                 && ADAMANTITE_INGOT_ITEM_ID.equals(itemStack.getItemId());
     }
 
-    void deleteEnderChestBlockConfig(int posX, int posY, int posZ) {
-        String locationKey = this.createEnderChestLocationKey(posX, posY, posZ);
+    void deleteVoidChestBlockConfig(int posX, int posY, int posZ) {
+        String locationKey = this.createVoidChestLocationKey(posX, posY, posZ);
 
         try {
-            this.dbJsonObject.deleteEnderChestBlockConfig(locationKey);
+            this.dbJsonObject.deleteVoidChestBlockConfig(locationKey);
         } catch (Exception errCatch) {
-            System.err.println("[EnderStorage] Failed to delete Ender_Chest config at " + locationKey + ": " + errCatch.getMessage());
+            System.err.println("[VoidStorage] Failed to delete VoidChest config at " + locationKey + ": " + errCatch.getMessage());
         }
     }
 
@@ -282,7 +282,7 @@ class EnderStorageManager implements EnderStorageApi {
             this.dbJsonObject.deletePocketDimensionSafe(locationKey);
             this.loadedPocketDimensionSafeContainers.remove(locationKey);
         } catch (Exception errCatch) {
-            System.err.println("[EnderStorage] Failed to delete pocket_DimensionSafe at " + locationKey + ": " + errCatch.getMessage());
+            System.err.println("[VoidStorage] Failed to delete pocket_DimensionSafe at " + locationKey + ": " + errCatch.getMessage());
         }
 
         return itemContainer;
@@ -309,24 +309,24 @@ class EnderStorageManager implements EnderStorageApi {
                     this.savePocketDimensionSafeContainer(locationKey, ownerUuid, itemContainer);
                 }
             } catch (Exception errCatch) {
-                System.err.println("[EnderStorage] Failed to save pocket_DimensionSafe at " + locationKey + ": " + errCatch.getMessage());
+                System.err.println("[VoidStorage] Failed to save pocket_DimensionSafe at " + locationKey + ": " + errCatch.getMessage());
             }
         }
 
-        for (Map.Entry<String, ItemContainer> keyValue : this.loadedEnderChestContainers.entrySet()) {
-            String enderChestStorageKey = keyValue.getKey();
-            EnderChestKey parsedKey = EnderChestKey.fromStorageKey(enderChestStorageKey);
+        for (Map.Entry<String, ItemContainer> keyValue : this.loadedVoidChestContainers.entrySet()) {
+            String voidChestStorageKey = keyValue.getKey();
+            VoidChestKey parsedKey = VoidChestKey.fromStorageKey(voidChestStorageKey);
             ItemContainer itemContainer = keyValue.getValue();
 
-            this.saveEnderChestContainer(parsedKey.colorCode, parsedKey.playerUuid, itemContainer);
+            this.saveVoidChestContainer(parsedKey.colorCode, parsedKey.playerUuid, itemContainer);
         }
 
         this.dbJsonObject.close();
     }
 
-    void setTickSystem(EnderStorageTickSystem tick) {
-        // Kept for compatibility with EnderStoragePlugin.
-        // Recipe-removal timing is handled through EnderStorageTickSystem.
+    void setTickSystem(VoidStorageTickSystem tick) {
+        // Kept for compatibility with VoidStoragePlugin.
+        // Recipe-removal timing is handled through VoidStorageTickSystem.
     }
 
     private ItemContainer getPocketDimensionSafeContainer(String locationKey, UUID ownerUuid) {
@@ -351,25 +351,25 @@ class EnderStorageManager implements EnderStorageApi {
         return itemContainer;
     }
 
-    private ItemContainer getEnderChestContainer(String colorCode, UUID optionalPlayerUuid) {
-        String enderChestStorageKey = EnderChestKey.toStorageKey(colorCode, optionalPlayerUuid);
-        ItemContainer itemContainer = this.loadedEnderChestContainers.get(enderChestStorageKey);
+    private ItemContainer getVoidChestContainer(String colorCode, UUID optionalPlayerUuid) {
+        String voidChestStorageKey = VoidChestKey.toStorageKey(colorCode, optionalPlayerUuid);
+        ItemContainer itemContainer = this.loadedVoidChestContainers.get(voidChestStorageKey);
 
         if (itemContainer != null && itemContainer.getCapacity() == INVENTORY_SLOT_COUNT) {
             return itemContainer;
         }
 
         if (itemContainer != null) {
-            this.saveEnderChestContainer(colorCode, optionalPlayerUuid, itemContainer);
-            this.loadedEnderChestContainers.remove(enderChestStorageKey);
+            this.saveVoidChestContainer(colorCode, optionalPlayerUuid, itemContainer);
+            this.loadedVoidChestContainers.remove(voidChestStorageKey);
         }
 
-        itemContainer = this.loadEnderChestContainer(colorCode, optionalPlayerUuid);
-        this.loadedEnderChestContainers.put(enderChestStorageKey, itemContainer);
+        itemContainer = this.loadVoidChestContainer(colorCode, optionalPlayerUuid);
+        this.loadedVoidChestContainers.put(voidChestStorageKey, itemContainer);
 
         //removed cause duplication glitch
         //final ItemContainer finalItemContainer = itemContainer;
-        //itemContainer.registerChangeEvent((_) -> this.saveEnderChestContainer(colorCode, playerUuid, finalItemContainer));
+        //itemContainer.registerChangeEvent((_) -> this.saveVoidChestContainer(colorCode, playerUuid, finalItemContainer));
 
         return itemContainer;
     }
@@ -413,10 +413,10 @@ class EnderStorageManager implements EnderStorageApi {
         );
     }
 
-    private void openEnderChestWrenchPage(
+    private void openVoidChestWrenchPage(
             Player player,
             ItemContainer lockContainer,
-            EnderChestBlockConfig blockConfig,
+            VoidChestBlockConfig blockConfig,
             String ownerDescription,
             Consumer<String> closeAction
     ) {
@@ -433,7 +433,7 @@ class EnderStorageManager implements EnderStorageApi {
         }
 
         Store<EntityStore> playerReferenceStore = playerReference.getStore();
-        EnderChestWrenchPage wrenchPage = new EnderChestWrenchPage(
+        VoidChestWrenchPage wrenchPage = new VoidChestWrenchPage(
                 playerRef,
                 blockConfig.colorCode,
                 ownerDescription,
@@ -452,7 +452,7 @@ class EnderStorageManager implements EnderStorageApi {
         );
     }
 
-    private String describeEnderChestOwner(Player player, EnderChestBlockConfig blockConfig) {
+    private String describeVoidChestOwner(Player player, VoidChestBlockConfig blockConfig) {
         if (blockConfig == null || blockConfig.ownerUuid == null) {
             return "Public network";
         }
@@ -477,7 +477,7 @@ class EnderStorageManager implements EnderStorageApi {
         ItemStack lockItem = lockContainer.getItemStack((short) 0);
 
         if (lockItem != null && !lockItem.isEmpty()) {
-            this.sendPlayerMessage(player, "The Ender_Chest lock slot is already occupied.");
+            this.sendPlayerMessage(player, "The VoidChest lock slot is already occupied.");
             return;
         }
 
@@ -492,77 +492,77 @@ class EnderStorageManager implements EnderStorageApi {
 
         playerInventory.removeItemStack(adamantiteIngot, true, true);
         lockContainer.setItemStackForSlot((short) 0, adamantiteIngot);
-        this.sendPlayerMessage(player, "Inserted one adamantite ingot into the Ender_Chest lock slot.");
+        this.sendPlayerMessage(player, "Inserted one adamantite ingot into the VoidChest lock slot.");
     }
 
     private void removeAdamantiteFromLockSlot(Player player, ItemContainer lockContainer) {
         ItemStack lockItem = lockContainer.getItemStack((short) 0);
 
         if (lockItem == null || lockItem.isEmpty()) {
-            this.sendPlayerMessage(player, "The Ender_Chest lock slot is empty.");
+            this.sendPlayerMessage(player, "The VoidChest lock slot is empty.");
             return;
         }
 
         lockContainer.removeItemStackFromSlot((short) 0);
         this.returnItemToPlayer(player, lockItem);
-        this.sendPlayerMessage(player, "Removed the adamantite ingot from the Ender_Chest lock slot.");
+        this.sendPlayerMessage(player, "Removed the adamantite ingot from the VoidChest lock slot.");
     }
 
     private String createPocketDimensionSafeLocationKey(int posX, int posY, int posZ) {
         return posX + ":" + posY + ":" + posZ;
     }
 
-    private String createEnderChestLocationKey(int posX, int posY, int posZ) {
+    private String createVoidChestLocationKey(int posX, int posY, int posZ) {
         return posX + ":" + posY + ":" + posZ;
     }
 
-    private EnderChestBlockConfig getOrCreateEnderChestBlockConfig(int posX, int posY, int posZ) {
-        String locationKey = this.createEnderChestLocationKey(posX, posY, posZ);
+    private VoidChestBlockConfig getOrCreateVoidChestBlockConfig(int posX, int posY, int posZ) {
+        String locationKey = this.createVoidChestLocationKey(posX, posY, posZ);
 
         try {
-            DatabaseHandler.EnderChestBlockConfig savedConfig = this.dbJsonObject.getEnderChestBlockConfig(locationKey);
+            DatabaseHandler.VoidChestBlockConfig savedConfig = this.dbJsonObject.getVoidChestBlockConfig(locationKey);
 
             if (savedConfig != null) {
-                return new EnderChestBlockConfig(
+                return new VoidChestBlockConfig(
                         this.normalizeColorCode(savedConfig.colorCode),
                         savedConfig.ownerUuid,
                         savedConfig.ownerName
                 );
             }
 
-            this.dbJsonObject.saveEnderChestBlockConfig(locationKey, DEFAULT_ENDER_CHEST_COLOR_CODE, null, null);
+            this.dbJsonObject.saveVoidChestBlockConfig(locationKey, DEFAULT_VOID_CHEST_COLOR_CODE, null, null);
         } catch (Exception errCatch) {
-            System.err.println("[EnderStorage] Failed to load Ender_Chest config for " + locationKey + ": " + errCatch.getMessage());
+            System.err.println("[VoidStorage] Failed to load VoidChest config for " + locationKey + ": " + errCatch.getMessage());
         }
 
-        return new EnderChestBlockConfig(DEFAULT_ENDER_CHEST_COLOR_CODE, null, null);
+        return new VoidChestBlockConfig(DEFAULT_VOID_CHEST_COLOR_CODE, null, null);
     }
 
-    private void saveEnderChestBlockConfig(int posX, int posY, int posZ, EnderChestBlockConfig blockConfig) {
+    private void saveVoidChestBlockConfig(int posX, int posY, int posZ, VoidChestBlockConfig blockConfig) {
         if (!this.canUseDatabase()) {
             return;
         }
 
-        String locationKey = this.createEnderChestLocationKey(posX, posY, posZ);
+        String locationKey = this.createVoidChestLocationKey(posX, posY, posZ);
 
         try {
-            this.dbJsonObject.saveEnderChestBlockConfig(
+            this.dbJsonObject.saveVoidChestBlockConfig(
                     locationKey,
                     this.normalizeColorCode(blockConfig.colorCode),
                     blockConfig.ownerUuid,
                     blockConfig.ownerName
             );
         } catch (Exception errCatch) {
-            System.err.println("[EnderStorage] Failed to save Ender_Chest config for " + locationKey + ": " + errCatch.getMessage());
+            System.err.println("VoidStorage] Failed to save VoidChest config for " + locationKey + ": " + errCatch.getMessage());
         }
     }
 
-    private void applyEnderChestLockWindow(
+    private void applyVoidChestLockWindow(
             Player player,
             int posX,
             int posY,
             int posZ,
-            EnderChestBlockConfig previousConfig,
+            VoidChestBlockConfig previousConfig,
             ItemContainer lockContainer,
             String selectedColorCode
     ) {
@@ -570,19 +570,19 @@ class EnderStorageManager implements EnderStorageApi {
         String colorCode = this.normalizeColorCode(selectedColorCode);
 
         if (lockItem == null || lockItem.isEmpty()) {
-            EnderChestBlockConfig newConfig = new EnderChestBlockConfig(colorCode, null, null);
-            this.saveEnderChestBlockConfig(posX, posY, posZ, newConfig);
-            this.syncEnderChestVisualState(player, posX, posY, posZ, newConfig);
-            this.sendPlayerMessage(player, "Ender_Chest set to public network " + colorCode + ".");
+            VoidChestBlockConfig newConfig = new VoidChestBlockConfig(colorCode, null, null);
+            this.saveVoidChestBlockConfig(posX, posY, posZ, newConfig);
+            this.syncVoidChestVisualState(player, posX, posY, posZ, newConfig);
+            this.sendPlayerMessage(player, "VoidChest set to public network " + colorCode + ".");
             return;
         }
 
         if (!ADAMANTITE_INGOT_ITEM_ID.equals(lockItem.getItemId())) {
             this.returnItemToPlayer(player, lockItem);
-            EnderChestBlockConfig newConfig = new EnderChestBlockConfig(colorCode, null, null);
-            this.saveEnderChestBlockConfig(posX, posY, posZ, newConfig);
-            this.syncEnderChestVisualState(player, posX, posY, posZ, newConfig);
-            this.sendPlayerMessage(player, "Only an adamantite ingot can lock an Ender_Chest. Invalid item returned.");
+            VoidChestBlockConfig newConfig = new VoidChestBlockConfig(colorCode, null, null);
+            this.saveVoidChestBlockConfig(posX, posY, posZ, newConfig);
+            this.syncVoidChestVisualState(player, posX, posY, posZ, newConfig);
+            this.sendPlayerMessage(player, "Only an adamantite ingot can lock an VoidChest. Invalid item returned.");
             return;
         }
 
@@ -594,24 +594,24 @@ class EnderStorageManager implements EnderStorageApi {
 
         if (previousConfig.ownerUuid == null && playerUuid == null) {
             this.returnItemToPlayer(player, lockItem);
-            this.sendPlayerMessage(player, "Unable to identify player for Ender_Chest ownership.");
+            this.sendPlayerMessage(player, "Unable to identify player for VoidChest ownership.");
             return;
         }
 
         UUID ownerUuid = previousConfig.ownerUuid == null ? playerUuid : previousConfig.ownerUuid;
         String ownerName = this.resolveOwnerName(player, previousConfig, ownerUuid);
-        EnderChestBlockConfig newConfig = new EnderChestBlockConfig(colorCode, ownerUuid, ownerName);
-        this.saveEnderChestBlockConfig(posX, posY, posZ, newConfig);
-        this.syncEnderChestVisualState(player, posX, posY, posZ, newConfig);
-        this.sendPlayerMessage(player, "Ender_Chest set to private network " + colorCode + " owned by " + ownerName + ".");
+        VoidChestBlockConfig newConfig = new VoidChestBlockConfig(colorCode, ownerUuid, ownerName);
+        this.saveVoidChestBlockConfig(posX, posY, posZ, newConfig);
+        this.syncVoidChestVisualState(player, posX, posY, posZ, newConfig);
+        this.sendPlayerMessage(player, "VoidChest set to private network " + colorCode + " owned by " + ownerName + ".");
     }
 
-    private void syncEnderChestVisualState(
+    private void syncVoidChestVisualState(
             Player player,
             int posX,
             int posY,
             int posZ,
-            EnderChestBlockConfig blockConfig
+            VoidChestBlockConfig blockConfig
     ) {
         if (player == null || player.getWorld() == null || blockConfig == null) {
             return;
@@ -620,13 +620,13 @@ class EnderStorageManager implements EnderStorageApi {
         try {
             BlockType currentBlockType = player.getWorld().getBlockType(posX, posY, posZ);
 
-            if (!this.isEnderChestBlock(currentBlockType)) {
+            if (!this.isVoidChestBlock(currentBlockType)) {
                 return;
             }
 
             String visualState = blockConfig.ownerUuid == null
-                    ? ENDER_CHEST_PUBLIC_VISUAL_STATE
-                    : ENDER_CHEST_PRIVATE_VISUAL_STATE;
+                    ? VOID_CHEST_PUBLIC_VISUAL_STATE
+                    : VOID_CHEST_PRIVATE_VISUAL_STATE;
 
             assert currentBlockType != null;
             player.getWorld().setBlockInteractionState(
@@ -635,12 +635,12 @@ class EnderStorageManager implements EnderStorageApi {
                     visualState
             );
         } catch (Exception errCatch) {
-            System.err.println("[EnderStorage] Failed to sync Ender_Chest visual state at "
+            System.err.println("[VoidStorage] Failed to sync VoidChest visual state at "
                     + posX + ":" + posY + ":" + posZ + ": " + errCatch.getMessage());
         }
     }
 
-    private String resolveOwnerName(Player player, EnderChestBlockConfig previousConfig, UUID ownerUuid) {
+    private String resolveOwnerName(Player player, VoidChestBlockConfig previousConfig, UUID ownerUuid) {
         if (previousConfig.ownerName != null && !previousConfig.ownerName.isBlank()) {
             return previousConfig.ownerName;
         }
@@ -680,7 +680,7 @@ class EnderStorageManager implements EnderStorageApi {
 
     private String normalizeColorCode(String colorCode) {
         if (colorCode == null || colorCode.isBlank()) {
-            return DEFAULT_ENDER_CHEST_COLOR_CODE;
+            return DEFAULT_VOID_CHEST_COLOR_CODE;
         }
 
         return colorCode;
@@ -705,7 +705,7 @@ class EnderStorageManager implements EnderStorageApi {
             this.sendPlayerMessage(player, "You do not have permission to access this pocket dimension safe.");
             return false;
         } catch (Exception errCatch) {
-            System.err.println("[EnderStorage] Failed to check pocket_DimensionSafe owner for " + locationKey + ": " + errCatch.getMessage());
+            System.err.println("[VoidStorage] Failed to check pocket_DimensionSafe owner for " + locationKey + ": " + errCatch.getMessage());
             this.sendPlayerMessage(player, "Unable to verify pocket dimension safe ownership.");
             return false;
         }
@@ -722,7 +722,7 @@ class EnderStorageManager implements EnderStorageApi {
             this.dbJsonObject.savePocketDimensionSafeInventory(locationKey, fallbackOwnerUuid, "{}");
             return fallbackOwnerUuid;
         } catch (Exception errCatch) {
-            System.err.println("[EnderStorage] Failed to create pocket_DimensionSafe owner for " + locationKey + ": " + errCatch.getMessage());
+            System.err.println("[VoidStorage] Failed to create pocket_DimensionSafe owner for " + locationKey + ": " + errCatch.getMessage());
             return null;
         }
     }
@@ -745,7 +745,7 @@ class EnderStorageManager implements EnderStorageApi {
                 }
             }
         } catch (Exception errCatch) {
-            System.err.println("[EnderStorage] Failed to register placed pocket_DimensionSafe at " + locationKey + ": " + errCatch.getMessage());
+            System.err.println("[VoidStorage] Failed to register placed pocket_DimensionSafe at " + locationKey + ": " + errCatch.getMessage());
         }
     }
 
@@ -769,7 +769,7 @@ class EnderStorageManager implements EnderStorageApi {
 
             return this.isServerOperator(player);
         } catch (Exception errCatch) {
-            System.err.println("[EnderStorage] Failed to check pocket_DimensionSafe modification permission for " + locationKey + ": " + errCatch.getMessage());
+            System.err.println("[VoidStorage] Failed to check pocket_DimensionSafe modification permission for " + locationKey + ": " + errCatch.getMessage());
             return false;
         }
     }
@@ -780,7 +780,7 @@ class EnderStorageManager implements EnderStorageApi {
         try {
             return this.dbJsonObject.getPocketDimensionSafeOwner(locationKey);
         } catch (Exception errCatch) {
-            System.err.println("[EnderStorage] Failed to get pocket_DimensionSafe owner for " + locationKey + ": " + errCatch.getMessage());
+            System.err.println("[VoidStorage] Failed to get pocket_DimensionSafe owner for " + locationKey + ": " + errCatch.getMessage());
             return null;
         }
     }*/
@@ -788,8 +788,8 @@ class EnderStorageManager implements EnderStorageApi {
     private boolean isServerOperator(Player player) {
         return player != null
                 && (
-                player.hasPermission("enderstorage.admin")
-                        || player.hasPermission("enderstorage.safe.bypass")
+                player.hasPermission("voidstorage.admin")
+                        || player.hasPermission("voidstorage.safe.bypass")
         );
     }
 
@@ -798,7 +798,7 @@ class EnderStorageManager implements EnderStorageApi {
             String inventoryJson = this.dbJsonObject.getPocketDimensionSafeInventory(locationKey);
             return this.itemContainerFromJson(inventoryJson, "pocket_DimensionSafe " + locationKey);
         } catch (Exception errCatch) {
-            System.err.println("[EnderStorage] Error loading pocket_DimensionSafe data for " + locationKey + ": " + errCatch.getMessage());
+            System.err.println("[VoidStorage] Error loading pocket_DimensionSafe data for " + locationKey + ": " + errCatch.getMessage());
             return new SimpleItemContainer(INVENTORY_SLOT_COUNT);
         }
     }
@@ -812,30 +812,30 @@ class EnderStorageManager implements EnderStorageApi {
             String inventoryJson = this.itemContainerToJson(itemContainer);
             this.dbJsonObject.savePocketDimensionSafeInventory(locationKey, ownerUuid, inventoryJson);
         } catch (Exception errCatch) {
-            System.err.println("[EnderStorage] Error saving pocket_DimensionSafe data for " + locationKey + ": " + errCatch.getMessage());
+            System.err.println("[VoidStorage] Error saving pocket_DimensionSafe data for " + locationKey + ": " + errCatch.getMessage());
         }
     }
 
-    private ItemContainer loadEnderChestContainer(String colorCode, UUID playerUuid) {
+    private ItemContainer loadVoidChestContainer(String colorCode, UUID playerUuid) {
         try {
-            String inventoryJson = this.dbJsonObject.getEnderChestInventory(colorCode, playerUuid);
-            return this.itemContainerFromJson(inventoryJson, "Ender_Chest " + colorCode);
+            String inventoryJson = this.dbJsonObject.getVoidChestInventory(colorCode, playerUuid);
+            return this.itemContainerFromJson(inventoryJson, "VoidChest " + colorCode);
         } catch (Exception errCatch) {
-            System.err.println("[EnderStorage] Error loading Ender_Chest data for " + colorCode + ": " + errCatch.getMessage());
+            System.err.println("[VoidStorage] Error loading VoidChest data for " + colorCode + ": " + errCatch.getMessage());
             return new SimpleItemContainer(INVENTORY_SLOT_COUNT);
         }
     }
 
-    private void saveEnderChestContainer(String colorCode, UUID optionalPlayerUuid, ItemContainer itemContainer) {
+    private void saveVoidChestContainer(String colorCode, UUID optionalPlayerUuid, ItemContainer itemContainer) {
         if (!this.canUseDatabase()) {
             return;
         }
 
         try {
             String inventoryJson = this.itemContainerToJson(itemContainer);
-            this.dbJsonObject.saveEnderChestInventory(colorCode, optionalPlayerUuid, inventoryJson);
+            this.dbJsonObject.saveVoidChestInventory(colorCode, optionalPlayerUuid, inventoryJson);
         } catch (Exception errCatch) {
-            System.err.println("[EnderStorage] Error saving Ender_Chest data for " + colorCode + ": " + errCatch.getMessage());
+            System.err.println("[VoidStorage] Error saving VoidChest data for " + colorCode + ": " + errCatch.getMessage());
         }
     }
 
@@ -875,7 +875,7 @@ class EnderStorageManager implements EnderStorageApi {
                     try {
                         metadata = BsonDocument.parse(savedItem.metadata);
                     } catch (Exception metadataError) {
-                        System.err.println("[EnderStorage] Failed to parse metadata for " + debugName + " slot " + inventorySlot);
+                        System.err.println("[VoidStorage] Failed to parse metadata for " + debugName + " slot " + inventorySlot);
                     }
                 }
 
@@ -945,11 +945,11 @@ class EnderStorageManager implements EnderStorageApi {
         }
     }
 
-    private static class EnderChestKey {
+    private static class VoidChestKey {
         private final String colorCode;
         private final UUID playerUuid;
 
-        private EnderChestKey(String colorCode, UUID playerUuid) {
+        private VoidChestKey(String colorCode, UUID playerUuid) {
             this.colorCode = colorCode;
             this.playerUuid = playerUuid;
         }
@@ -962,7 +962,7 @@ class EnderStorageManager implements EnderStorageApi {
             return "player:" + playerUuid + ":" + colorCode;
         }
 
-        private static EnderChestKey fromStorageKey(String storageKey) {
+        private static VoidChestKey fromStorageKey(String storageKey) {
             if (storageKey.startsWith("player:")) {
                 String remaining = storageKey.substring("player:".length());
                 int uuidEndIndex = remaining.indexOf(':');
@@ -970,24 +970,24 @@ class EnderStorageManager implements EnderStorageApi {
                 if (uuidEndIndex > 0) {
                     UUID playerUuid = UUID.fromString(remaining.substring(0, uuidEndIndex));
                     String colorCode = remaining.substring(uuidEndIndex + 1);
-                    return new EnderChestKey(colorCode, playerUuid);
+                    return new VoidChestKey(colorCode, playerUuid);
                 }
             }
 
             if (storageKey.startsWith("public:")) {
-                return new EnderChestKey(storageKey.substring("public:".length()), null);
+                return new VoidChestKey(storageKey.substring("public:".length()), null);
             }
 
-            return new EnderChestKey(storageKey, null);
+            return new VoidChestKey(storageKey, null);
         }
     }
 
-    private static class EnderChestBlockConfig {
+    private static class VoidChestBlockConfig {
         private final String colorCode;
         private final UUID ownerUuid;
         private final String ownerName;
 
-        private EnderChestBlockConfig(String colorCode, UUID ownerUuid, String ownerName) {
+        private VoidChestBlockConfig(String colorCode, UUID ownerUuid, String ownerName) {
             this.colorCode = colorCode;
             this.ownerUuid = ownerUuid;
             this.ownerName = ownerName;
@@ -1023,7 +1023,7 @@ class EnderStorageManager implements EnderStorageApi {
             this.dbJsonObject.deletePocketDimensionSafe(locationKey);
             this.loadedPocketDimensionSafeContainers.remove(locationKey);
         } catch (Exception errCatch) {
-            System.err.println("[EnderStorage] Failed to delete pocket_DimensionSafe at " + locationKey + ": " + errCatch.getMessage());
+            System.err.println("[VoidStorage] Failed to delete pocket_DimensionSafe at " + locationKey + ": " + errCatch.getMessage());
         }
     }
 }

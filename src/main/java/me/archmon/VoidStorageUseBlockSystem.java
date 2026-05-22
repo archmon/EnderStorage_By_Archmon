@@ -18,11 +18,11 @@ import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.jspecify.annotations.NonNull;
 
-class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, UseBlockEvent.Pre> {
+class VoidStorageUseBlockSystem extends EntityEventSystem<EntityStore, UseBlockEvent.Pre> {
 
-    private final EnderStorageManager manager;
+    private final VoidStorageManager manager;
 
-    EnderStorageUseBlockSystem(EnderStorageManager manager) {
+    VoidStorageUseBlockSystem(VoidStorageManager manager) {
         super(UseBlockEvent.Pre.class);
         this.manager = manager;
     }
@@ -73,8 +73,8 @@ class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, UseBlock
             return;
         }
 
-        // Allow players to open Ender_Chest. Automation must use the EnderStorage API/database path.
-        if (this.manager.isEnderChestBlock(blockType)) {
+        // Allow players to open VoidChest. Automation must use the VoidStorage API/database path.
+        if (this.manager.isVoidChestBlock(blockType)) {
             Player player = this.getPlayerFromEvent(id, store, event);
 
             if (player != null) {
@@ -82,9 +82,9 @@ class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, UseBlock
                 BlockType blockType1 = event.getBlockType();
                 byte rotationalIndex = 0;
 
-                if (this.isUsingEnderWrench(event) && this.isCrouching(player, store)) {
+                if (this.isUsingVoidWrench(event) && this.isCrouching(player, store)) {
                     event.setCancelled(true);
-                    this.manager.openEnderChestWrenchWindow(
+                    this.manager.openVoidChestWrenchWindow(
                             player,
                             targetedBlock.x,
                             targetedBlock.y,
@@ -95,7 +95,7 @@ class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, UseBlock
 
                 event.setCancelled(true);
 
-                this.manager.openSharedEnderChest(
+                this.manager.openSharedVoidChest(
                         player,
                         targetedBlock.x,
                         targetedBlock.y,
@@ -129,11 +129,11 @@ class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, UseBlock
         return player;
     }
 
-    private boolean isUsingEnderWrench(UseBlockEvent.Pre event) {
+    private boolean isUsingVoidWrench(UseBlockEvent.Pre event) {
         try {
             InteractionContext interactionContext = event.getContext();
             ItemStack heldItem = interactionContext.getHeldItem();
-            return this.manager.isEnderWrenchItem(heldItem);
+            return this.manager.isVoidWrenchItem(heldItem);
         } catch (Exception ignored) {
             return false;
         }

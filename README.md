@@ -1,4 +1,4 @@
-# Hytale version of EnderStorage by Archmon
+# Hytale version of VoidStorage by Archmon
 Originally the template for Hytale java plugins modified by Archmon
 from what Kaupenjoe released.
 
@@ -12,8 +12,9 @@ me with the development of this mod.
 ## Current Features
 
 - pocket_DimensionSafe: a private database-backed storage block keyed by placement location.
-- Ender_Chest: planned shared network chest using color-code channels.
+- VoidChest: planned shared network chest using color-code channels.
+- VoidWrench: a wrench that is held to open the ender chest gui.
 
 ## Development Notes
 
-The pocket_DimensionSafe and Ender_Chest storage systems are being rewritten around database-backed inventories.
+The pocket_DimensionSafe and VoidChest storage systems are being rewritten around database-backed inventories.
