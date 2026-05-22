@@ -47,4 +47,41 @@ enum VoidChestColor {
 
         return VALUES[index];
     }
+
+    public static String formatColorCode(String colorCode) {
+        int[] colorIndexes = parseColorCode(colorCode);
+
+        return byIndex(colorIndexes[0]).getDisplayName()
+                + " / " + byIndex(colorIndexes[1]).getDisplayName()
+                + " / " + byIndex(colorIndexes[2]).getDisplayName();
+    }
+
+    private static int[] parseColorCode(String colorCode) {
+        int[] colorIndexes = new int[]{0, 0, 0};
+
+        if (colorCode == null || colorCode.isBlank()) {
+            return colorIndexes;
+        }
+
+        String[] parts = colorCode.split(":");
+
+        for (int index = 0; index < Math.min(parts.length, colorIndexes.length); index++) {
+            colorIndexes[index] = parseColorIndex(parts[index]);
+        }
+
+        return colorIndexes;
+    }
+
+    private static int parseColorIndex(String value) {
+        try {
+            int colorIndex = Integer.parseInt(value);
+
+            if (colorIndex >= 0 && colorIndex < VALUES.length) {
+                return colorIndex;
+            }
+        } catch (NumberFormatException ignored) {
+        }
+
+        return 0;
+    }
 }

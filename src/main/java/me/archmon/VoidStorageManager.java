@@ -573,7 +573,7 @@ class VoidStorageManager implements VoidStorageApi {
             VoidChestBlockConfig newConfig = new VoidChestBlockConfig(colorCode, null, null);
             this.saveVoidChestBlockConfig(posX, posY, posZ, newConfig);
             this.syncVoidChestVisualState(player, posX, posY, posZ, newConfig);
-            this.sendPlayerMessage(player, "VoidChest set to public network " + colorCode + ".");
+            this.sendPlayerMessage(player, "VoidChest set to public network " + VoidChestColor.formatColorCode(colorCode) + ".");
             return;
         }
 
@@ -603,7 +603,7 @@ class VoidStorageManager implements VoidStorageApi {
         VoidChestBlockConfig newConfig = new VoidChestBlockConfig(colorCode, ownerUuid, ownerName);
         this.saveVoidChestBlockConfig(posX, posY, posZ, newConfig);
         this.syncVoidChestVisualState(player, posX, posY, posZ, newConfig);
-        this.sendPlayerMessage(player, "VoidChest set to private network " + colorCode + " owned by " + ownerName + ".");
+        this.sendPlayerMessage(player, "VoidChest set to private network " + VoidChestColor.formatColorCode(colorCode) + " owned by " + ownerName + ".");
     }
 
     private void syncVoidChestVisualState(
