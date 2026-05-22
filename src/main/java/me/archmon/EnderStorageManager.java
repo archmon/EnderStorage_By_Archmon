@@ -14,6 +14,7 @@ import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.entity.entities.player.windows.ContainerBlockWindow;
 import com.hypixel.hytale.server.core.entity.entities.player.windows.ContainerWindow;
 import com.hypixel.hytale.server.core.entity.entities.player.windows.Window;
+import com.hypixel.hytale.server.core.inventory.InventoryComponent;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
 import com.hypixel.hytale.server.core.inventory.container.SimpleItemContainer;
@@ -110,6 +111,24 @@ class EnderStorageManager implements EnderStorageApi {
     private UUID getPlayerUuid(Player player) {
         PlayerRef playerRef = this.getPlayerRef(player);
         return playerRef == null ? null : playerRef.getUuid();
+    }
+
+    private ItemContainer getPlayerHotbarFirstInventory(Player player) {
+        if (player == null) {
+            return null;
+        }
+
+        Ref<EntityStore> playerReference = player.getReference();
+
+        if (playerReference == null || !playerReference.isValid()) {
+            return null;
+        }
+
+        return InventoryComponent.getCombined(
+                playerReference.getStore(),
+                playerReference,
+                InventoryComponent.HOTBAR_FIRST
+        );
     }
 
     void openPocketDimensionSafe(Player player, int posX, int posY, int posZ, int rotationIndex, BlockType blockType) {
@@ -461,13 +480,14 @@ class EnderStorageManager implements EnderStorageApi {
 
         ItemStack adamantiteIngot = new ItemStack(ADAMANTITE_INGOT_ITEM_ID, 1);
 
-        if (player.getInventory() == null
-                || !player.getInventory().getCombinedHotbarFirst().canRemoveItemStack(adamantiteIngot, true, true)) {
+        ItemContainer playerInventory = this.getPlayerHotbarFirstInventory(player);
+
+        if (playerInventory == null || !playerInventory.canRemoveItemStack(adamantiteIngot, true, true)) {
             this.sendPlayerMessage(player, "You do not have an adamantite ingot to insert.");
             return;
         }
 
-        player.getInventory().getCombinedHotbarFirst().removeItemStack(adamantiteIngot, true, true);
+        playerInventory.removeItemStack(adamantiteIngot, true, true);
         lockContainer.setItemStackForSlot((short) 0, adamantiteIngot);
         this.sendPlayerMessage(player, "Inserted one adamantite ingot into the Ender_Chest lock slot.");
     }
