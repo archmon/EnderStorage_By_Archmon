@@ -13,14 +13,14 @@ import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.jspecify.annotations.NonNull;
 
-public class EnderStoragePlaceBlockSystem extends EntityEventSystem<EntityStore, PlaceBlockEvent> {
+class EnderStoragePlaceBlockSystem extends EntityEventSystem<EntityStore, PlaceBlockEvent> {
 
     private static final String POCKET_DIMENSION_SAFE_ITEM_ID = "pocket_DimensionSafe";
 
 
     private final EnderStorageManager manager;
 
-    public EnderStoragePlaceBlockSystem(EnderStorageManager manager) {
+    EnderStoragePlaceBlockSystem(EnderStorageManager manager) {
         super(PlaceBlockEvent.class);
         this.manager = manager;
     }

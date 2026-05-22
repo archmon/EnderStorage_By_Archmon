@@ -6,7 +6,7 @@ import java.io.File;
 import java.sql.*;
 import java.util.UUID;
 
-public class DatabaseHandler {
+class DatabaseHandler {
     private static final String ENDER_CHEST_TABLE = "ender_chest";
     private static final String ENDER_CHEST_BLOCK_TABLE = "ender_chest_block";
     private static final String POCKET_DIMENSION_SAFE_TABLE = "pocket_dimension_safe";
@@ -15,7 +15,7 @@ public class DatabaseHandler {
     private final JsonObject config;
     private String dbType;
 
-    public DatabaseHandler(JsonObject jsonObject) {
+    DatabaseHandler(JsonObject jsonObject) {
         if (jsonObject != null) {
             this.config = jsonObject;
         } else {
@@ -23,7 +23,7 @@ public class DatabaseHandler {
         }
     }
 
-    public synchronized void dbConnect() throws SQLException {
+    synchronized void dbConnect() throws SQLException {
         if (this.connection == null || this.connection.isClosed()) {
             JsonObject jsonObject;
 
@@ -149,7 +149,7 @@ public class DatabaseHandler {
         this.ensureEnderChestBlockOwnerNameColumn();
     }
 
-    public synchronized String getEnderChestInventory(String colorCode, UUID playerUuid) throws SQLException {
+    synchronized String getEnderChestInventory(String colorCode, UUID playerUuid) throws SQLException {
         this.requireConnection();
 
         String networkKey = this.createEnderChestNetworkKey(colorCode, playerUuid);
@@ -169,7 +169,7 @@ public class DatabaseHandler {
         return null;
     }
 
-    public synchronized void saveEnderChestInventory(String colorCode, UUID playerUuid, String inventoryData) throws SQLException {
+    synchronized void saveEnderChestInventory(String colorCode, UUID playerUuid, String inventoryData) throws SQLException {
         this.requireConnection();
 
         String networkKey = this.createEnderChestNetworkKey(colorCode, playerUuid);
@@ -214,7 +214,7 @@ public class DatabaseHandler {
         }
     }
 
-    public synchronized EnderChestBlockConfig getEnderChestBlockConfig(String locationKey) throws SQLException {
+    synchronized EnderChestBlockConfig getEnderChestBlockConfig(String locationKey) throws SQLException {
         this.requireConnection();
 
         String sql = "SELECT color_code, owner_uuid, owner_name FROM " + ENDER_CHEST_BLOCK_TABLE + " WHERE location_key = ?;";
@@ -234,7 +234,7 @@ public class DatabaseHandler {
         return null;
     }
 
-    public synchronized void saveEnderChestBlockConfig(String locationKey, String colorCode, UUID ownerUuid, String ownerName) throws SQLException {
+    synchronized void saveEnderChestBlockConfig(String locationKey, String colorCode, UUID ownerUuid, String ownerName) throws SQLException {
         this.requireConnection();
 
         String sql;
@@ -282,7 +282,7 @@ public class DatabaseHandler {
         }
     }
 
-    public synchronized void deleteEnderChestBlockConfig(String locationKey) throws SQLException {
+    synchronized void deleteEnderChestBlockConfig(String locationKey) throws SQLException {
         this.requireConnection();
 
         String sql = "DELETE FROM " + ENDER_CHEST_BLOCK_TABLE + " WHERE location_key = ?;";
@@ -293,7 +293,7 @@ public class DatabaseHandler {
         }
     }
 
-    public synchronized String getPocketDimensionSafeInventory(String locationKey) throws SQLException {
+    synchronized String getPocketDimensionSafeInventory(String locationKey) throws SQLException {
         this.requireConnection();
 
         String sql = "SELECT inventory_data FROM " + POCKET_DIMENSION_SAFE_TABLE + " WHERE location_key = ?;";
@@ -312,7 +312,7 @@ public class DatabaseHandler {
         return null;
     }
 
-    public synchronized UUID getPocketDimensionSafeOwner(String locationKey) throws SQLException {
+    synchronized UUID getPocketDimensionSafeOwner(String locationKey) throws SQLException {
         this.requireConnection();
 
         String sql = "SELECT owner_uuid FROM " + POCKET_DIMENSION_SAFE_TABLE + " WHERE location_key = ?;";
@@ -330,7 +330,7 @@ public class DatabaseHandler {
         return null;
     }
 
-    public synchronized void savePocketDimensionSafeInventory(String locationKey, UUID ownerUuid, String inventoryData) throws SQLException {
+    synchronized void savePocketDimensionSafeInventory(String locationKey, UUID ownerUuid, String inventoryData) throws SQLException {
         this.requireConnection();
 
         String sql;
@@ -364,7 +364,7 @@ public class DatabaseHandler {
         }
     }
 
-    public synchronized void deletePocketDimensionSafe(String locationKey) throws SQLException {
+    synchronized void deletePocketDimensionSafe(String locationKey) throws SQLException {
         this.requireConnection();
 
         String sql = "DELETE FROM " + POCKET_DIMENSION_SAFE_TABLE + " WHERE location_key = ?;";
@@ -423,18 +423,17 @@ public class DatabaseHandler {
         }
     }
 
-    public synchronized void close() {
+    synchronized void close() {
         try {
             if (this.connection != null && !this.connection.isClosed()) {
                 this.connection.close();
             }
         } catch (SQLException errorClose) {
-            //noinspection CallToPrintStackTrace
-            errorClose.printStackTrace();
+            System.err.println("[EnderStorage] Failed to close database connection: " + errorClose.getMessage());
         }
     }
 
-    public boolean isConnected() {
+    boolean isConnected() {
         try {
             return this.connection != null && !this.connection.isClosed();
         } catch (SQLException connectionError) {
@@ -450,12 +449,12 @@ public class DatabaseHandler {
         return "player:" + playerUuid + ":" + colorCode;
     }
 
-    public static class EnderChestBlockConfig {
-        public final String colorCode;
-        public final UUID ownerUuid;
-        public final String ownerName;
+    static class EnderChestBlockConfig {
+        final String colorCode;
+        final UUID ownerUuid;
+        final String ownerName;
 
-        public EnderChestBlockConfig(String colorCode, UUID ownerUuid, String ownerName) {
+        EnderChestBlockConfig(String colorCode, UUID ownerUuid, String ownerName) {
             this.colorCode = colorCode;
             this.ownerUuid = ownerUuid;
             this.ownerName = ownerName;

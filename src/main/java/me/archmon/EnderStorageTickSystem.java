@@ -10,12 +10,12 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.jspecify.annotations.NonNull;
 
 
-public class EnderStorageTickSystem extends EntityTickingSystem<EntityStore> {
+class EnderStorageTickSystem extends EntityTickingSystem<EntityStore> {
 
     private final EnderStorageManager manager;
     private static boolean apiProbed = false;
 
-    public EnderStorageTickSystem(EnderStorageManager manager) {
+    EnderStorageTickSystem(EnderStorageManager manager) {
         this.manager = manager;
     }
 

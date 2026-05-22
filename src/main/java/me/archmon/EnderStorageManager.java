@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 @SuppressWarnings("removal")
-public class EnderStorageManager {
+class EnderStorageManager implements EnderStorageApi {
 
     private static final short INVENTORY_SLOT_COUNT = 54;
     private static final short ENDER_CHEST_LOCK_SLOT_COUNT = 1;
@@ -45,7 +45,7 @@ public class EnderStorageManager {
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private final DatabaseHandler dbJsonObject;
 
-    public EnderStorageManager(JsonObject dbConfigFile) {
+    EnderStorageManager(JsonObject dbConfigFile) {
         JsonObject databaseJsonObject;
 
         if (dbConfigFile != null && dbConfigFile.has("database")) {
@@ -63,25 +63,25 @@ public class EnderStorageManager {
         }
     }
 
-    public boolean isEnderChestBlock(BlockType blockType) {
+    boolean isEnderChestBlock(BlockType blockType) {
         return blockType != null
                 && blockType.getId() != null
                 && blockType.getId().contains("Ender_Chest");
     }
 
-    public boolean isPocket_DimensionSafeBlock(BlockType blockType) {
+    boolean isPocket_DimensionSafeBlock(BlockType blockType) {
         return blockType != null
                 && blockType.getId() != null
                 && blockType.getId().contains("pocket_DimensionSafe");
     }
 
-    public boolean isEnderWrenchItem(ItemStack itemStack) {
+    boolean isEnderWrenchItem(ItemStack itemStack) {
         return itemStack != null
                 && !itemStack.isEmpty()
                 && ENDER_WRENCH_ITEM_ID.equals(itemStack.getItemId());
     }
 
-    public ItemStack createEnderChestItemStack() {
+    ItemStack createEnderChestItemStack() {
         return new ItemStack(ENDER_CHEST_ITEM_ID, 1);
     }
 
@@ -91,7 +91,7 @@ public class EnderStorageManager {
         }
     }
 
-    public void openPocketDimensionSafe(Player player, int posX, int posY, int posZ, int rotationIndex, BlockType blockType) {
+    void openPocketDimensionSafe(Player player, int posX, int posY, int posZ, int rotationIndex, BlockType blockType) {
         if (player == null) {
             return;
         }
@@ -123,7 +123,7 @@ public class EnderStorageManager {
         );
     }
 
-    public void openSharedEnderChest(Player player, int posX, int posY, int posZ, int rotationIndex, BlockType blockType) {
+    void openSharedEnderChest(Player player, int posX, int posY, int posZ, int rotationIndex, BlockType blockType) {
         if (player == null) {
             return;
         }
@@ -147,7 +147,7 @@ public class EnderStorageManager {
         );
     }
 
-    public void openEnderChestWrenchWindow(Player player, int posX, int posY, int posZ) {
+    void openEnderChestWrenchWindow(Player player, int posX, int posY, int posZ) {
         if (player == null) {
             return;
         }
@@ -184,22 +184,24 @@ public class EnderStorageManager {
         );
     }
 
-    public ItemContainer getSharedEnderChestContainer() {
+    private ItemContainer getSharedEnderChestContainer() {
         return this.getEnderChestContainer(DEFAULT_ENDER_CHEST_COLOR_CODE, null);
     }
 
     //this is to be used for other mods to hook into the enderchest inventory
+    @Override
     public ItemContainer getEnderChestInventoryForAutomation() {
         return this.getSharedEnderChestContainer();
     }
 
     //this is to be used for other mods to hook into the enderchest inventory
+    @Override
     public void saveEnderChestInventory() {
         ItemContainer itemContainer = this.getSharedEnderChestContainer();
         this.saveEnderChestContainer(DEFAULT_ENDER_CHEST_COLOR_CODE, null, itemContainer);
     }
 
-    public ItemStack getEnderChestBlockLockItem(int posX, int posY, int posZ) {
+    ItemStack getEnderChestBlockLockItem(int posX, int posY, int posZ) {
         EnderChestBlockConfig blockConfig = this.getOrCreateEnderChestBlockConfig(posX, posY, posZ);
 
         if (blockConfig.ownerUuid == null) {
@@ -209,7 +211,7 @@ public class EnderStorageManager {
         return new ItemStack(ADAMANTITE_INGOT_ITEM_ID, 1);
     }
 
-    public ItemStack createPocketDimensionSafeItemStack() {
+    ItemStack createPocketDimensionSafeItemStack() {
         return new ItemStack("pocket_DimensionSafe", 1);
     }
 
@@ -219,7 +221,7 @@ public class EnderStorageManager {
                 && ADAMANTITE_INGOT_ITEM_ID.equals(itemStack.getItemId());
     }
 
-    public void deleteEnderChestBlockConfig(int posX, int posY, int posZ) {
+    void deleteEnderChestBlockConfig(int posX, int posY, int posZ) {
         String locationKey = this.createEnderChestLocationKey(posX, posY, posZ);
 
         try {
@@ -230,7 +232,7 @@ public class EnderStorageManager {
     }
 
     //not sure when this was added, but it's to be used for other mods to hook into the pocket dimension safe inventory I think
-    public ItemContainer removePocketDimensionSafeAndReturnContents(int posX, int posY, int posZ) {
+    ItemContainer removePocketDimensionSafeAndReturnContents(int posX, int posY, int posZ) {
         String locationKey = this.createPocketDimensionSafeLocationKey(posX, posY, posZ);
         ItemContainer itemContainer = this.loadPocketDimensionSafeContainer(locationKey);
 
@@ -244,7 +246,7 @@ public class EnderStorageManager {
         return itemContainer;
     }
 
-    public boolean canDestroyPocketDimensionSafe(Player player, int posX, int posY, int posZ) {
+    boolean canDestroyPocketDimensionSafe(Player player, int posX, int posY, int posZ) {
         if (player == null) {
             return false;
         }
@@ -253,7 +255,7 @@ public class EnderStorageManager {
         return this.canAccessPocketDimensionSafe(player, locationKey);
     }
 
-    public void saveAll() {
+    void saveAll() {
         for (Map.Entry<String, ItemContainer> keyValue : this.loadedPocketDimensionSafeContainers.entrySet()) {
             String locationKey = keyValue.getKey();
             ItemContainer itemContainer = keyValue.getValue();
@@ -280,7 +282,7 @@ public class EnderStorageManager {
         this.dbJsonObject.close();
     }
 
-    public void setTickSystem(EnderStorageTickSystem tick) {
+    void setTickSystem(EnderStorageTickSystem tick) {
         // Kept for compatibility with EnderStoragePlugin.
         // Recipe-removal timing is handled through EnderStorageTickSystem.
     }
@@ -668,7 +670,7 @@ public class EnderStorageManager {
         }
     }
 
-    public void registerPlacedPocketDimensionSafe(Player player, int posX, int posY, int posZ) {
+    void registerPlacedPocketDimensionSafe(Player player, int posX, int posY, int posZ) {
         if (player == null || !this.canUseDatabase()) {
             return;
         }
@@ -686,7 +688,7 @@ public class EnderStorageManager {
         }
     }
 
-    public boolean canModifyPocketDimensionSafe(Player player, int posX, int posY, int posZ) {
+    boolean canModifyPocketDimensionSafe(Player player, int posX, int posY, int posZ) {
         if (player == null) {
             return false;
         }
@@ -711,7 +713,7 @@ public class EnderStorageManager {
         }
     }
 
-    public UUID getPocketDimensionSafeOwner(int posX, int posY, int posZ) {
+    UUID getPocketDimensionSafeOwner(int posX, int posY, int posZ) {
         String locationKey = this.createPocketDimensionSafeLocationKey(posX, posY, posZ);
 
         try {
@@ -740,7 +742,7 @@ public class EnderStorageManager {
         }
     }
 
-    public void savePocketDimensionSafeContainer(String locationKey, UUID ownerUuid, ItemContainer itemContainer) {
+    private void savePocketDimensionSafeContainer(String locationKey, UUID ownerUuid, ItemContainer itemContainer) {
         if (!this.canUseDatabase()) {
             return;
         }
@@ -931,7 +933,7 @@ public class EnderStorageManager {
         }
     }
 
-    public boolean isPocketDimensionSafeEmpty(int posX, int posY, int posZ) {
+    boolean isPocketDimensionSafeEmpty(int posX, int posY, int posZ) {
         String locationKey = this.createPocketDimensionSafeLocationKey(posX, posY, posZ);
         ItemContainer itemContainer = this.loadPocketDimensionSafeContainer(locationKey);
 
@@ -948,12 +950,12 @@ public class EnderStorageManager {
         return true;
     }
 
-    public ItemContainer getPocketDimensionSafeContents(int posX, int posY, int posZ) {
+    ItemContainer getPocketDimensionSafeContents(int posX, int posY, int posZ) {
         String locationKey = this.createPocketDimensionSafeLocationKey(posX, posY, posZ);
         return this.loadPocketDimensionSafeContainer(locationKey);
     }
 
-    public void deletePocketDimensionSafeData(int posX, int posY, int posZ) {
+    void deletePocketDimensionSafeData(int posX, int posY, int posZ) {
         String locationKey = this.createPocketDimensionSafeLocationKey(posX, posY, posZ);
 
         try {

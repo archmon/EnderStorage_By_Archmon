@@ -27,11 +27,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class EnderStorageBreakBlockSystem extends EntityEventSystem<EntityStore, BreakBlockEvent> {
+class EnderStorageBreakBlockSystem extends EntityEventSystem<EntityStore, BreakBlockEvent> {
 
     private final EnderStorageManager manager;
 
-    public EnderStorageBreakBlockSystem(EnderStorageManager manager) {
+    EnderStorageBreakBlockSystem(EnderStorageManager manager) {
         super(BreakBlockEvent.class);
         this.manager = manager;
     }
@@ -162,7 +162,7 @@ public class EnderStorageBreakBlockSystem extends EntityEventSystem<EntityStore,
     ) {
         Vector3d dropPosition = new Vector3d(
                 targetBlock.x + 0.5d,
-                targetBlock.y + 1.25d,//note to self, this was upped cause items were failing to spawn from old ai methods before switching to codex
+                targetBlock.y + 1.25d,
                 targetBlock.z + 0.5d
         );
 
@@ -183,7 +183,6 @@ public class EnderStorageBreakBlockSystem extends EntityEventSystem<EntityStore,
 
         commandBuffer.addEntities(dropHolders, AddReason.SPAWN);
 
-        System.out.println("[EnderStorage] Dropped " + dropHolders.length + " item stacks at " + dropPosition);
         return true;
     }
 

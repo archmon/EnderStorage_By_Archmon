@@ -1,6 +1,6 @@
 package me.archmon;
 
-public enum EnderChestColor {
+enum EnderChestColor {
     WHITE("White", "#f9fffe"),
     LIGHT_GRAY("Light Gray", "#9d9d97"),
     GRAY("Gray", "#474f52"),

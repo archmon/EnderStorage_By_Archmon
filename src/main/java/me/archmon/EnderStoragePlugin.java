@@ -7,7 +7,6 @@ import com.hypixel.hytale.server.core.command.system.CommandRegistry;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import me.archmon.commands.EnderStorageBugReport;
-import me.archmon.commands.EnderStorageDebug;
 import me.archmon.commands.EnderStorageModVersion;
 import org.jspecify.annotations.NonNull;
 
@@ -44,7 +43,6 @@ public class EnderStoragePlugin extends JavaPlugin {
         CommandRegistry commandRegistry = this.getCommandRegistry();
         commandRegistry.registerCommand(new EnderStorageModVersion(this.getManifest().getVersion().toString()));
         commandRegistry.registerCommand(new EnderStorageBugReport());
-        commandRegistry.registerCommand(new EnderStorageDebug());
 
         //initialize the Ender storage systems
         JsonObject configFile = this.loadConfig();
@@ -85,13 +83,12 @@ public class EnderStoragePlugin extends JavaPlugin {
                 }
             }
         } catch (Exception err){
-            //noinspection CallToPrintStackTrace
-            err.printStackTrace();
+            System.err.println("[EnderStorage] Failed to extract README.txt: " + err.getMessage());
         }
     }
 
-    //Allows other plugins to access the EnderStorageManager, which is needed for the EnderStorage API.
-    public static EnderStorageManager getEnderStorageManager() {
+    // Allows other plugins to access only the supported EnderStorage API surface.
+    public static EnderStorageApi getEnderStorageManager() {
         return manager;
     }
 
@@ -111,7 +108,12 @@ public class EnderStoragePlugin extends JavaPlugin {
                 }
 
                 if (!configJson.has("enableCrafting_Ender_Chest")){
-                    configJson.addProperty("enableCrafting_Ender_Chest", true);//Note to self: add wrench
+                    configJson.addProperty("enableCrafting_Ender_Chest", true);
+                    configInput = true;
+                }
+
+                if (!configJson.has("enableCrafting_EnderWrench")){
+                    configJson.addProperty("enableCrafting_EnderWrench", true);
                     configInput = true;
                 }
 
@@ -136,6 +138,7 @@ public class EnderStoragePlugin extends JavaPlugin {
         JsonObject configJson = new JsonObject();
         configJson.addProperty("enableCrafting_pocket_DimensionSafe", true);
         configJson.addProperty("enableCrafting_Ender_Chest", true);
+        configJson.addProperty("enableCrafting_EnderWrench", true);
         configJson.add("database", this.createDefaultDbConfig());
         Files.createDirectories(configFile.getParent());
         Files.writeString(configFile, (new GsonBuilder()).setPrettyPrinting().create().toJson(configJson));
@@ -159,6 +162,7 @@ public class EnderStoragePlugin extends JavaPlugin {
         configJson.addProperty("_comment", "EnderStorage Configuration");
         configJson.addProperty("enableCrafting_pocket_DimensionSafe", true);
         configJson.addProperty("enableCrafting_Ender_Chest", true);
+        configJson.addProperty("enableCrafting_EnderWrench", true);
         configJson.add("database", this.createDefaultDbConfig());
         return configJson;
     }
@@ -168,6 +172,7 @@ public class EnderStoragePlugin extends JavaPlugin {
         JsonObject configJson = this.loadConfig();
         boolean craftingBoolean;
         boolean craftingBoolean2;
+        boolean craftingBoolean3;
         if (configJson.has("enableCrafting_pocket_DimensionSafe")) {
             craftingBoolean = configJson.get("enableCrafting_pocket_DimensionSafe").getAsBoolean();
         } else {
@@ -178,12 +183,20 @@ public class EnderStoragePlugin extends JavaPlugin {
         } else {
             craftingBoolean2 = true;
         }
+        if (configJson.has("enableCrafting_EnderWrench")) {
+            craftingBoolean3 = configJson.get("enableCrafting_EnderWrench").getAsBoolean();
+        } else {
+            craftingBoolean3 = true;
+        }
 
         if (!craftingBoolean){
-            this.removePocket_DimensionSafeRecipe("pocket_DimensionSafe");
+            this.removeRecipe("pocket_DimensionSafe");
         }
         if (!craftingBoolean2){
-            this.removePocket_DimensionSafeRecipe("Ender_Chest");
+            this.removeRecipe("Ender_Chest");
+        }
+        if (!craftingBoolean3){
+            this.removeRecipe("EnderWrench");
         }
     }
 
@@ -194,7 +207,7 @@ public class EnderStoragePlugin extends JavaPlugin {
     }
 
 
-    private void removePocket_DimensionSafeRecipe(String blockName) {
+    private void removeRecipe(String blockName) {
         try {
             @SuppressWarnings("rawtypes") Class craftingPluginClass = Class.forName("com.hypixel.hytale.builtin.crafting.CraftingPlugin");
             @SuppressWarnings("unchecked") Method getCrafting = craftingPluginClass.getMethod("get");
@@ -234,8 +247,7 @@ public class EnderStoragePlugin extends JavaPlugin {
                 removedRecipeMethod.invoke(workbenchObject, removedRecipe);
             }
         } catch (Exception err) {
-            //noinspection CallToPrintStackTrace
-            err.printStackTrace();
+            System.err.println("[EnderStorage] Failed to remove recipe for " + blockName + ": " + err.getMessage());
         }
     }
 

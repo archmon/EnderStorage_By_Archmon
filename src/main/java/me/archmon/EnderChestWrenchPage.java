@@ -16,7 +16,7 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 import java.util.function.BooleanSupplier;
 
-public class EnderChestWrenchPage extends InteractiveCustomUIPage<EnderChestWrenchPage.WrenchPageEventData> {
+class EnderChestWrenchPage extends InteractiveCustomUIPage<EnderChestWrenchPage.WrenchPageEventData> {
 
     private static final String PAGE_PATH = "Pages/EnderChestWrenchPage.ui";
     private static final String ADAMANTITE_INGOT_ITEM_ID = "Ingredient_Bar_Adamantite";
@@ -27,7 +27,7 @@ public class EnderChestWrenchPage extends InteractiveCustomUIPage<EnderChestWren
     private final Runnable insertAdamantiteAction;
     private final Runnable removeAdamantiteAction;
 
-    public EnderChestWrenchPage(
+    EnderChestWrenchPage(
             PlayerRef playerRef,
             String colorCode,
             String ownerDescription,

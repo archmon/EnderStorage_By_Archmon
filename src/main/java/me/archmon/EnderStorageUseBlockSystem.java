@@ -18,11 +18,11 @@ import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.jspecify.annotations.NonNull;
 
-public class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, UseBlockEvent.Pre> {
+class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, UseBlockEvent.Pre> {
 
     private final EnderStorageManager manager;
 
-    public EnderStorageUseBlockSystem(EnderStorageManager manager) {
+    EnderStorageUseBlockSystem(EnderStorageManager manager) {
         super(UseBlockEvent.Pre.class);
         this.manager = manager;
     }
@@ -111,7 +111,7 @@ public class EnderStorageUseBlockSystem extends EntityEventSystem<EntityStore, U
         Player player = null;
 
         try {
-            InteractionContext interactionContext = event.getContext();//note to self; getContext() is non-null
+            InteractionContext interactionContext = event.getContext();
 
             @SuppressWarnings("rawtypes") Ref owningEntity = interactionContext.getOwningEntity();
             //noinspection unchecked
