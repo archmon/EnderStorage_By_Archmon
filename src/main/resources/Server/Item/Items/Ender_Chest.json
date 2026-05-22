@@ -70,6 +70,25 @@
         "OpenWindow": {
           "InteractionSoundEventId": "SFX_Chest_Wooden_Open",
           "CustomModelAnimation": "Blocks/Animations/Chest/Chest_Open.blockyanim"
+        },
+        "PublicNetwork": {
+          "CustomModel": "Blocks/Ender_Chest.blockymodel",
+          "CustomModelTexture": [
+            {
+              "Texture": "BlockTextures/EnderStorage_Chests_Texture.png",
+              "Weight": 1
+            }
+          ]
+        },
+        "PrivateNetwork": {
+          "CustomModel": "Blocks/Ender_Chest.blockymodel",
+          "CustomModelTexture": [
+            {
+              "Texture": "BlockTextures/EnderStorage_Chests_Texture.png",
+              "Weight": 1
+            }
+          ],
+          "CustomModelAnimation": "Blocks/Animations/EnderStorage/Ender_Chest_Lock_Private.blockyanim"
         }
       }
     },

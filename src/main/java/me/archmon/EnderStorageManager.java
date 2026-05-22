@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.protocol.packets.interface_.Page;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
@@ -35,6 +36,8 @@ public class EnderStorageManager {
     private static final String ENDER_CHEST_ITEM_ID = "Ender_Chest";
     private static final String ENDER_WRENCH_ITEM_ID = "EnderWrench";
     private static final String ADAMANTITE_INGOT_ITEM_ID = "Ingredient_Bar_Adamantite";
+    private static final String ENDER_CHEST_PUBLIC_VISUAL_STATE = "PublicNetwork";
+    private static final String ENDER_CHEST_PRIVATE_VISUAL_STATE = "PrivateNetwork";
 
     private final Map<String, ItemContainer> loadedPocketDimensionSafeContainers = new ConcurrentHashMap<>();
     private final Map<String, ItemContainer> loadedEnderChestContainers = new ConcurrentHashMap<>();
@@ -137,7 +140,10 @@ public class EnderStorageManager {
                 rotationIndex,
                 blockType,
                 true,
-                () -> this.saveEnderChestContainer(blockConfig.colorCode, blockConfig.ownerUuid, itemContainer)
+                () -> {
+                    this.saveEnderChestContainer(blockConfig.colorCode, blockConfig.ownerUuid, itemContainer);
+                    this.syncEnderChestVisualState(player, posX, posY, posZ, blockConfig);
+                }
         );
     }
 
@@ -514,14 +520,18 @@ public class EnderStorageManager {
         String colorCode = this.normalizeColorCode(selectedColorCode);
 
         if (lockItem == null || lockItem.isEmpty()) {
-            this.saveEnderChestBlockConfig(posX, posY, posZ, new EnderChestBlockConfig(colorCode, null, null));
+            EnderChestBlockConfig newConfig = new EnderChestBlockConfig(colorCode, null, null);
+            this.saveEnderChestBlockConfig(posX, posY, posZ, newConfig);
+            this.syncEnderChestVisualState(player, posX, posY, posZ, newConfig);
             this.sendPlayerMessage(player, "Ender_Chest set to public network " + colorCode + ".");
             return;
         }
 
         if (!ADAMANTITE_INGOT_ITEM_ID.equals(lockItem.getItemId())) {
             this.returnItemToPlayer(player, lockItem);
-            this.saveEnderChestBlockConfig(posX, posY, posZ, new EnderChestBlockConfig(colorCode, null, null));
+            EnderChestBlockConfig newConfig = new EnderChestBlockConfig(colorCode, null, null);
+            this.saveEnderChestBlockConfig(posX, posY, posZ, newConfig);
+            this.syncEnderChestVisualState(player, posX, posY, posZ, newConfig);
             this.sendPlayerMessage(player, "Only an adamantite ingot can lock an Ender_Chest. Invalid item returned.");
             return;
         }
@@ -532,8 +542,43 @@ public class EnderStorageManager {
 
         UUID ownerUuid = previousConfig.ownerUuid == null ? player.getUuid() : previousConfig.ownerUuid;
         String ownerName = this.resolveOwnerName(player, previousConfig, ownerUuid);
-        this.saveEnderChestBlockConfig(posX, posY, posZ, new EnderChestBlockConfig(colorCode, ownerUuid, ownerName));
+        EnderChestBlockConfig newConfig = new EnderChestBlockConfig(colorCode, ownerUuid, ownerName);
+        this.saveEnderChestBlockConfig(posX, posY, posZ, newConfig);
+        this.syncEnderChestVisualState(player, posX, posY, posZ, newConfig);
         this.sendPlayerMessage(player, "Ender_Chest set to private network " + colorCode + " owned by " + ownerName + ".");
+    }
+
+    private void syncEnderChestVisualState(
+            Player player,
+            int posX,
+            int posY,
+            int posZ,
+            EnderChestBlockConfig blockConfig
+    ) {
+        if (player == null || player.getWorld() == null || blockConfig == null) {
+            return;
+        }
+
+        try {
+            BlockType currentBlockType = player.getWorld().getBlockType(posX, posY, posZ);
+
+            if (!this.isEnderChestBlock(currentBlockType)) {
+                return;
+            }
+
+            String visualState = blockConfig.ownerUuid == null
+                    ? ENDER_CHEST_PUBLIC_VISUAL_STATE
+                    : ENDER_CHEST_PRIVATE_VISUAL_STATE;
+
+            player.getWorld().setBlockInteractionState(
+                    new Vector3i(posX, posY, posZ),
+                    currentBlockType,
+                    visualState
+            );
+        } catch (Exception errCatch) {
+            System.err.println("[EnderStorage] Failed to sync Ender_Chest visual state at "
+                    + posX + ":" + posY + ":" + posZ + ": " + errCatch.getMessage());
+        }
     }
 
     private String resolveOwnerName(Player player, EnderChestBlockConfig previousConfig, UUID ownerUuid) {
