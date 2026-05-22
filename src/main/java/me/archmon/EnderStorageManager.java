@@ -197,8 +197,11 @@ class EnderStorageManager implements EnderStorageApi {
         lockContainer.setSlotFilter(
                 FilterActionType.ADD,
                 (short) 0,
-                (actionType, itemContainer, slot, itemStack) -> this.isAdamantiteIngot(itemStack)
-                        && (itemContainer.getItemStack(slot) == null || itemContainer.getItemStack(slot).isEmpty())
+                (actionType, itemContainer, slot, itemStack) -> {
+                    ItemStack currentItemStack = itemContainer.getItemStack(slot);
+                    return this.isAdamantiteIngot(itemStack)
+                            && (currentItemStack == null || currentItemStack.isEmpty());
+                }
         );
 
         if (blockConfig.ownerUuid != null) {
