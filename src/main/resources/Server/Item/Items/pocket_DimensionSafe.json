@@ -23,6 +23,9 @@
       },
       {
         "ItemId": "Ingredient_Voidheart"
+      },
+      {
+        "ItemId": "Ingredient_Bar_Thorium"
       }
     ],
     "BenchRequirement": [
@@ -64,6 +67,20 @@
     "VariantRotation": "NESW",
     "Interactions": {
       "Use": "Open_Container"
+    },
+    "Supporting": {
+      "Up": [
+        {
+          "FaceType": "Full"
+        }
+      ]
+    },
+    "Support": {
+      "Down": [
+        {
+          "FaceType": "Full"
+        }
+      ]
     }
   },
   "Tags": {
@@ -74,7 +91,21 @@
       "Dungeon"
     ]
   },
+  "IconProperties": {
+    "Scale": 0.55,
+    "Rotation": [
+      22.5,
+      45,
+      22.5
+    ],
+    "Translation": [
+      0,
+      -15
+    ]
+  },
   "ItemSoundSetId": "ISS_Blocks_Wood",
   "ItemLevel": 18,
-  "MaxStack": 64
+  "MaxStack": 64,
+  "Model": "Blocks/pocket_DimensionSafe.blockymodel",
+  "Texture": "BlockTextures/VoidStorage_Chests_Texture.png"
 }

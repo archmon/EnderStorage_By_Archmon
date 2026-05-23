@@ -23,6 +23,9 @@
       },
       {
         "ItemId": "Ingredient_Voidheart"
+      },
+      {
+        "ItemId": "Ingredient_Bar_Cobalt"
       }
     ],
     "BenchRequirement": [
@@ -134,5 +137,7 @@
   },
   "ItemSoundSetId": "ISS_Blocks_Wood",
   "ItemLevel": 18,
-  "MaxStack": 64
+  "MaxStack": 64,
+  "Model": "Blocks/VoidChest.blockymodel",
+  "Texture": "BlockTextures/VoidStorage_Chests_Texture.png"
 }

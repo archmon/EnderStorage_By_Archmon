@@ -26,7 +26,7 @@ Each player can have their own network in addition to the shared one.
 
 ## API Access for other mods to see the Void Chest
 
-To access the Void Chest, other mods can use the VoidStorage API. 
+To access the Void Chest, other mods must use the VoidStorage API. 
 The API provides methods to interact with the Void Chest, such as depositing and withdrawing items. 
 This allows other mods to utilize the Void Chest for storage purposes. 
 Please refer to the methods within the VoidStorageAPI class to use the API. 
