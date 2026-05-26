@@ -119,6 +119,7 @@ class VoidStorageUseBlockSystem extends EntityEventSystem<EntityStore, UseBlockE
             InteractionContext interactionContext = event.getContext();
 
             @SuppressWarnings("rawtypes") Ref owningEntity = interactionContext.getOwningEntity();
+            assert owningEntity != null;
             //noinspection unchecked
             player = store.getComponent(owningEntity, Player.getComponentType());
 
