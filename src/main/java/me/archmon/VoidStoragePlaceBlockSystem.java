@@ -6,17 +6,14 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.EntityEventSystem;
-import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.ecs.PlaceBlockEvent;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import org.joml.Vector3i;
 import org.jspecify.annotations.NonNull;
 
 class VoidStoragePlaceBlockSystem extends EntityEventSystem<EntityStore, PlaceBlockEvent> {
-
-    private static final String POCKET_DIMENSION_SAFE_ITEM_ID = "pocket_DimensionSafe";
-
 
     private final VoidStorageManager manager;
 
@@ -43,7 +40,7 @@ class VoidStoragePlaceBlockSystem extends EntityEventSystem<EntityStore, PlaceBl
             return;
         }
 
-        Player player = this.getPlayerFromEvent(id, store);
+        Player player = this.getPlayerFromEvent(id, archetypeChunk, store);
 
         if (player == null) {
             return;
@@ -66,10 +63,23 @@ class VoidStoragePlaceBlockSystem extends EntityEventSystem<EntityStore, PlaceBl
             return false;
         }
 
-        return POCKET_DIMENSION_SAFE_ITEM_ID.equals(itemInHand.getItemId());
+        return this.manager.isPocketDimensionSafeItem(itemInHand);
     }
 
-    private Player getPlayerFromEvent(int id, Store<EntityStore> store) {
+    private Player getPlayerFromEvent(
+            int id,
+            ArchetypeChunk<EntityStore> archetypeChunk,
+            Store<EntityStore> store
+    ) {
+        try {
+            Player player = archetypeChunk.getComponent(id, Player.getComponentType());
+
+            if (player != null) {
+                return player;
+            }
+        } catch (Exception ignored) {
+        }
+
         try {
             @SuppressWarnings({"rawtypes", "unchecked"}) Ref refStoreID = new Ref(store, id);
             //noinspection unchecked

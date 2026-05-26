@@ -6,7 +6,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
-import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.protocol.packets.interface_.Page;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
@@ -19,13 +18,17 @@ import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
 import com.hypixel.hytale.server.core.inventory.container.SimpleItemContainer;
 import com.hypixel.hytale.server.core.inventory.container.filter.FilterActionType;
+import com.hypixel.hytale.server.core.modules.entity.component.DisplayNameComponent;
+import com.hypixel.hytale.server.core.permissions.PermissionsModule;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.core.util.BsonUtil;
 import org.bson.BsonDocument;
+import org.joml.Vector3i;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
@@ -38,9 +41,14 @@ class VoidStorageManager implements VoidStorageApi {
     private static final String DEFAULT_VOID_CHEST_COLOR_CODE = "0:0:0";
     private static final String VOID_CHEST_ITEM_ID = "VoidChest";
     private static final String VOID_WRENCH_ITEM_ID = "VoidWrench";
+    private static final String POCKET_DIMENSION_SAFE_ITEM_ID = "pocket_DimensionSafe";
     private static final String ADAMANTITE_INGOT_ITEM_ID = "Ingredient_Bar_Adamantite";
     private static final String VOID_CHEST_PUBLIC_VISUAL_STATE = "PublicNetwork";
     private static final String VOID_CHEST_PRIVATE_VISUAL_STATE = "PrivateNetwork";
+    private static final String VOIDSTORAGE_ADMIN_PERMISSION = "voidstorage.admin";
+    private static final String VOIDSTORAGE_SAFE_BYPASS_PERMISSION = "voidstorage.safe.bypass";
+    private static final String HYTALE_ADMIN_GROUP = "hytale:Admin";
+    private static final String HYTALE_OP_GROUP = "OP";
 
     private final Map<String, ItemContainer> loadedPocketDimensionSafeContainers = new ConcurrentHashMap<>();
     private final Map<String, ItemContainer> loadedVoidChestContainers = new ConcurrentHashMap<>();
@@ -84,19 +92,36 @@ class VoidStorageManager implements VoidStorageApi {
                 && VOID_WRENCH_ITEM_ID.equals(itemStack.getItemId());
     }
 
+    boolean isPocketDimensionSafeItem(ItemStack itemStack) {
+        if (itemStack == null || itemStack.isEmpty()) {
+            return false;
+        }
+
+        return POCKET_DIMENSION_SAFE_ITEM_ID.equals(itemStack.getItemId())
+                || POCKET_DIMENSION_SAFE_ITEM_ID.equals(itemStack.getBlockKey());
+    }
+
     ItemStack createVoidChestItemStack() {
         return new ItemStack(VOID_CHEST_ITEM_ID, 1);
     }
 
-    private void sendPlayerMessage(Player player, String message) {
-        if (player != null) {
-            player.sendMessage(Message.raw(message));
+    void sendPlayerMessage(Player player, String message) {
+        PlayerRef playerRef = this.getPlayerRef(player);
+
+        if (playerRef != null) {
+            playerRef.sendMessage(Message.raw(message));
         }
     }
 
     private PlayerRef getPlayerRef(Player player) {
         if (player == null) {
             return null;
+        }
+
+        @SuppressWarnings("removal") PlayerRef playerRef = player.getPlayerRef();
+
+        if (playerRef != null) {
+            return playerRef;
         }
 
         Ref<EntityStore> playerReference = player.getReference();
@@ -136,7 +161,7 @@ class VoidStorageManager implements VoidStorageApi {
             return;
         }
 
-        String locationKey = this.createPocketDimensionSafeLocationKey(posX, posY, posZ);
+        String locationKey = this.resolvePocketDimensionSafeLocationKey(player, posX, posY, posZ);
 
         if (!this.canAccessPocketDimensionSafe(player, locationKey)) {
             return;
@@ -255,7 +280,7 @@ class VoidStorageManager implements VoidStorageApi {
     }
 
     ItemStack createPocketDimensionSafeItemStack() {
-        return new ItemStack("pocket_DimensionSafe", 1);
+        return new ItemStack(POCKET_DIMENSION_SAFE_ITEM_ID, 1);
     }
 
     private boolean isAdamantiteIngot(ItemStack itemStack) {
@@ -508,8 +533,39 @@ class VoidStorageManager implements VoidStorageApi {
         this.sendPlayerMessage(player, "Removed the adamantite ingot from the VoidChest lock slot.");
     }
 
-    private String createPocketDimensionSafeLocationKey(int posX, int posY, int posZ) {
+    private String createLegacyPocketDimensionSafeLocationKey(int posX, int posY, int posZ) {
         return posX + ":" + posY + ":" + posZ;
+    }
+
+    private String createPocketDimensionSafeLocationKey(Player player, int posX, int posY, int posZ) {
+        if (player == null || player.getWorld() == null || player.getWorld().getName() == null) {
+            return this.createLegacyPocketDimensionSafeLocationKey(posX, posY, posZ);
+        }
+
+        return player.getWorld().getName() + ":" + posX + ":" + posY + ":" + posZ;
+    }
+
+    private String resolvePocketDimensionSafeLocationKey(Player player, int posX, int posY, int posZ) {
+        String locationKey = this.createPocketDimensionSafeLocationKey(player, posX, posY, posZ);
+        String legacyLocationKey = this.createLegacyPocketDimensionSafeLocationKey(posX, posY, posZ);
+
+        if (locationKey.equals(legacyLocationKey) || this.hasPocketDimensionSafeRecord(locationKey)) {
+            return locationKey;
+        }
+
+        return this.hasPocketDimensionSafeRecord(legacyLocationKey) ? legacyLocationKey : locationKey;
+    }
+
+    private boolean hasPocketDimensionSafeRecord(String locationKey) {
+        if (!this.canUseDatabase()) {
+            return false;
+        }
+
+        try {
+            return this.dbJsonObject.getPocketDimensionSafeOwner(locationKey) != null;
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 
     private String createVoidChestLocationKey(int posX, int posY, int posZ) {
@@ -653,7 +709,28 @@ class VoidStorageManager implements VoidStorageApi {
     }
 
     private String getPlayerDisplayName(Player player) {
-        String displayName = player.getDisplayName();
+        try {
+            Ref<EntityStore> playerReference = player.getReference();
+
+            if (playerReference != null) {
+                DisplayNameComponent displayNameComponent = playerReference.getStore().getComponent(
+                        playerReference,
+                        DisplayNameComponent.getComponentType()
+                );
+
+                if (displayNameComponent != null && displayNameComponent.getDisplayName() != null) {
+                    String displayName = displayNameComponent.getDisplayName().getRawText();
+
+                    if (displayName != null && !displayName.isBlank()) {
+                        return displayName;
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+        }
+
+        PlayerRef playerRef = this.getPlayerRef(player);
+        String displayName = playerRef == null ? null : playerRef.getUsername();
 
         if (displayName == null || displayName.isBlank()) {
             return "Unknown owner";
@@ -732,7 +809,7 @@ class VoidStorageManager implements VoidStorageApi {
             return;
         }
 
-        String locationKey = this.createPocketDimensionSafeLocationKey(posX, posY, posZ);
+        String locationKey = this.createPocketDimensionSafeLocationKey(player, posX, posY, posZ);
 
         try {
             UUID existingOwnerUuid = this.dbJsonObject.getPocketDimensionSafeOwner(locationKey);
@@ -754,7 +831,11 @@ class VoidStorageManager implements VoidStorageApi {
             return false;
         }
 
-        String locationKey = this.createPocketDimensionSafeLocationKey(posX, posY, posZ);
+        if (this.isServerOperator(player)) {
+            return true;
+        }
+
+        String locationKey = this.resolvePocketDimensionSafeLocationKey(player, posX, posY, posZ);
 
         try {
             UUID ownerUuid = this.dbJsonObject.getPocketDimensionSafeOwner(locationKey);
@@ -767,7 +848,7 @@ class VoidStorageManager implements VoidStorageApi {
                 return true;
             }
 
-            return this.isServerOperator(player);
+            return false;
         } catch (Exception errCatch) {
             System.err.println("[VoidStorage] Failed to check pocket_DimensionSafe modification permission for " + locationKey + ": " + errCatch.getMessage());
             return false;
@@ -786,11 +867,29 @@ class VoidStorageManager implements VoidStorageApi {
     }*/
 
     private boolean isServerOperator(Player player) {
-        return player != null
+        PlayerRef playerRef = this.getPlayerRef(player);
+
+        return playerRef != null
                 && (
-                player.hasPermission("voidstorage.admin")
-                        || player.hasPermission("voidstorage.safe.bypass")
+                playerRef.hasPermission(VOIDSTORAGE_ADMIN_PERMISSION)
+                        || playerRef.hasPermission(VOIDSTORAGE_SAFE_BYPASS_PERMISSION)
+                        || this.isHytaleAdminGroupMember(playerRef)
         );
+    }
+
+    private boolean isHytaleAdminGroupMember(PlayerRef playerRef) {
+        try {
+            PermissionsModule permissionsModule = PermissionsModule.get();
+
+            if (permissionsModule == null) {
+                return false;
+            }
+
+            Set<String> groups = permissionsModule.getGroupsForUser(playerRef.getUuid());
+            return groups.contains(HYTALE_ADMIN_GROUP) || groups.contains(HYTALE_OP_GROUP);
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 
     private ItemContainer loadPocketDimensionSafeContainer(String locationKey) {
@@ -1011,13 +1110,13 @@ class VoidStorageManager implements VoidStorageApi {
         return true;
     }*/
 
-    ItemContainer getPocketDimensionSafeContents(int posX, int posY, int posZ) {
-        String locationKey = this.createPocketDimensionSafeLocationKey(posX, posY, posZ);
+    ItemContainer getPocketDimensionSafeContents(Player player, int posX, int posY, int posZ) {
+        String locationKey = this.resolvePocketDimensionSafeLocationKey(player, posX, posY, posZ);
         return this.loadPocketDimensionSafeContainer(locationKey);
     }
 
-    void deletePocketDimensionSafeData(int posX, int posY, int posZ) {
-        String locationKey = this.createPocketDimensionSafeLocationKey(posX, posY, posZ);
+    void deletePocketDimensionSafeData(Player player, int posX, int posY, int posZ) {
+        String locationKey = this.resolvePocketDimensionSafeLocationKey(player, posX, posY, posZ);
 
         try {
             this.dbJsonObject.deletePocketDimensionSafe(locationKey);

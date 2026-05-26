@@ -6,7 +6,6 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.EntityEventSystem;
-import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.protocol.InteractionType;
 import com.hypixel.hytale.protocol.MovementStates;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
@@ -16,6 +15,7 @@ import com.hypixel.hytale.server.core.entity.movement.MovementStatesComponent;
 import com.hypixel.hytale.server.core.event.events.ecs.UseBlockEvent;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import org.joml.Vector3i;
 import org.jspecify.annotations.NonNull;
 
 class VoidStorageUseBlockSystem extends EntityEventSystem<EntityStore, UseBlockEvent.Pre> {
@@ -51,7 +51,7 @@ class VoidStorageUseBlockSystem extends EntityEventSystem<EntityStore, UseBlockE
 
         // Allow player to open pocket_DimensionSafe, but do not expose a world-sided inventory.
         if (this.manager.isPocket_DimensionSafeBlock(blockType)) {
-            Player player = this.getPlayerFromEvent(id, store, event);
+            Player player = this.getPlayerFromEvent(id, archetypeChunk, store, event);
 
             if (player != null) {
                 Vector3i targetedBlock = event.getTargetBlock();
@@ -75,7 +75,7 @@ class VoidStorageUseBlockSystem extends EntityEventSystem<EntityStore, UseBlockE
 
         // Allow players to open VoidChest. Automation must use the VoidStorage API/database path.
         if (this.manager.isVoidChestBlock(blockType)) {
-            Player player = this.getPlayerFromEvent(id, store, event);
+            Player player = this.getPlayerFromEvent(id, archetypeChunk, store, event);
 
             if (player != null) {
                 Vector3i targetedBlock = event.getTargetBlock();
@@ -107,7 +107,12 @@ class VoidStorageUseBlockSystem extends EntityEventSystem<EntityStore, UseBlockE
         }
     }
 
-    private Player getPlayerFromEvent(int id, Store<EntityStore> store, UseBlockEvent.Pre event) {
+    private Player getPlayerFromEvent(
+            int id,
+            ArchetypeChunk<EntityStore> archetypeChunk,
+            Store<EntityStore> store,
+            UseBlockEvent.Pre event
+    ) {
         Player player = null;
 
         try {
@@ -118,6 +123,13 @@ class VoidStorageUseBlockSystem extends EntityEventSystem<EntityStore, UseBlockE
             player = store.getComponent(owningEntity, Player.getComponentType());
 
         } catch (Exception ignored) {
+        }
+
+        if (player == null) {
+            try {
+                player = archetypeChunk.getComponent(id, Player.getComponentType());
+            } catch (Exception ignored) {
+            }
         }
 
         if (player == null) {

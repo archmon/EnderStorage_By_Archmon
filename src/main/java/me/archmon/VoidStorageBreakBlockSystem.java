@@ -8,19 +8,19 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.EntityEventSystem;
-import com.hypixel.hytale.math.vector.Vector3i;
+import com.hypixel.hytale.math.vector.Rotation3f;
+import com.hypixel.hytale.math.vector.Rotation3fc;
 import com.hypixel.hytale.protocol.GameMode;
-import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.ecs.BreakBlockEvent;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import com.hypixel.hytale.math.vector.Vector3d;
-import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
 import com.hypixel.hytale.server.core.modules.entity.item.ItemComponent;
 
+import org.joml.Vector3d;
+import org.joml.Vector3i;
 import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
@@ -53,7 +53,7 @@ class VoidStorageBreakBlockSystem extends EntityEventSystem<EntityStore, BreakBl
         BlockType blockType = event.getBlockType();
 
         if (this.manager.isVoidChestBlock(blockType)) {
-            Player player = this.getPlayerFromEvent(id, store);
+            Player player = this.getPlayerFromEvent(id, archetypeChunk, store);
             Vector3i targetBlock = event.getTargetBlock();
 
             List<ItemStack> itemStacks = new ArrayList<>();
@@ -89,7 +89,7 @@ class VoidStorageBreakBlockSystem extends EntityEventSystem<EntityStore, BreakBl
             return;
         }
 
-        Player player = this.getPlayerFromEvent(id, store);
+        Player player = this.getPlayerFromEvent(id, archetypeChunk, store);
 
         if (player == null) {
             event.setCancelled(true);
@@ -107,11 +107,12 @@ class VoidStorageBreakBlockSystem extends EntityEventSystem<EntityStore, BreakBl
 
         if (!canModify) {
             event.setCancelled(true);
-            player.sendMessage(Message.raw("You do not have permission to break this pocket dimension safe."));
+            this.manager.sendPlayerMessage(player, "You do not have permission to break this pocket dimension safe.");
             return;
         }
 
         ItemContainer itemContainer = this.manager.getPocketDimensionSafeContents(
+                player,
                 targetBlock.x,
                 targetBlock.y,
                 targetBlock.z
@@ -128,12 +129,13 @@ class VoidStorageBreakBlockSystem extends EntityEventSystem<EntityStore, BreakBl
 
             if (!droppedContents) {
                 event.setCancelled(true);
-                player.sendMessage(Message.raw("Unable to drop pocket dimension safe contents. The safe was not broken."));
+                this.manager.sendPlayerMessage(player, "Unable to drop pocket dimension safe contents. The safe was not broken.");
                 return;
             }
         }
 
         this.manager.deletePocketDimensionSafeData(
+                player,
                 targetBlock.x,
                 targetBlock.y,
                 targetBlock.z
@@ -166,7 +168,7 @@ class VoidStorageBreakBlockSystem extends EntityEventSystem<EntityStore, BreakBl
                 targetBlock.z + 0.5d
         );
 
-        Vector3f dropRotation = new Vector3f(0.0f, 0.0f, 0.0f);
+        Rotation3fc dropRotation = Rotation3f.ZERO;
 
         Holder<EntityStore>[] dropHolders = ItemComponent.generateItemDrops(
                 commandBuffer,
@@ -186,7 +188,20 @@ class VoidStorageBreakBlockSystem extends EntityEventSystem<EntityStore, BreakBl
         return true;
     }
 
-    private Player getPlayerFromEvent(int id, Store<EntityStore> store) {
+    private Player getPlayerFromEvent(
+            int id,
+            ArchetypeChunk<EntityStore> archetypeChunk,
+            Store<EntityStore> store
+    ) {
+        try {
+            Player player = archetypeChunk.getComponent(id, Player.getComponentType());
+
+            if (player != null) {
+                return player;
+            }
+        } catch (Exception ignored) {
+        }
+
         try {
             @SuppressWarnings({"rawtypes", "unchecked"}) Ref refStoreID = new Ref(store, id);
             //noinspection unchecked

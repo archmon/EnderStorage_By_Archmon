@@ -4,6 +4,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.hypixel.hytale.server.core.command.system.CommandRegistry;
+import com.hypixel.hytale.server.core.permissions.PermissionsModule;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import me.archmon.commands.VoidStorageBugReport;
@@ -30,6 +31,7 @@ public class VoidStoragePlugin extends JavaPlugin {
     protected void setup(){
         super.setup();
         instance = this;
+        this.registerPermissions();
         this.extractReadme();
         Path modFolder = this.findModFolder();
         if (!Files.exists(modFolder, new LinkOption[0])) {
@@ -60,6 +62,21 @@ public class VoidStoragePlugin extends JavaPlugin {
                 manager.saveAll();
             }
         }));
+    }
+
+    private void registerPermissions() {
+        try {
+            PermissionsModule.registerPermission("voidstorage.admin", "hytale:Admin");
+            PermissionsModule.registerPermission("voidstorage.safe.bypass", "hytale:Admin");
+
+            PermissionsModule permissionsModule = PermissionsModule.get();
+
+            if (permissionsModule != null) {
+                permissionsModule.refreshVirtualGroups();
+            }
+        } catch (Exception errCatch) {
+            System.err.println("[VoidStorage] Failed to register permissions: " + errCatch.getMessage());
+        }
     }
 
 

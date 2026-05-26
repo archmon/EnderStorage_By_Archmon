@@ -6,12 +6,11 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.EntityEventSystem;
-import com.hypixel.hytale.math.vector.Vector3i;
-import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.ecs.DamageBlockEvent;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import org.joml.Vector3i;
 import org.jspecify.annotations.NonNull;
 
 class VoidStorageDamageBlockSystem extends EntityEventSystem<EntityStore, DamageBlockEvent> {
@@ -43,7 +42,7 @@ class VoidStorageDamageBlockSystem extends EntityEventSystem<EntityStore, Damage
             return;
         }
 
-        Player player = this.getPlayerFromEvent(id, store);
+        Player player = this.getPlayerFromEvent(id, archetypeChunk, store);
 
         if (player == null) {
             event.setCancelled(true);
@@ -61,11 +60,24 @@ class VoidStorageDamageBlockSystem extends EntityEventSystem<EntityStore, Damage
 
         if (!canModify) {
             event.setCancelled(true);
-            player.sendMessage(Message.raw("You do not have permission to damage this pocket dimension safe."));
+            this.manager.sendPlayerMessage(player, "You do not have permission to damage this pocket dimension safe.");
         }
     }
 
-    private Player getPlayerFromEvent(int id, Store<EntityStore> store) {
+    private Player getPlayerFromEvent(
+            int id,
+            ArchetypeChunk<EntityStore> archetypeChunk,
+            Store<EntityStore> store
+    ) {
+        try {
+            Player player = archetypeChunk.getComponent(id, Player.getComponentType());
+
+            if (player != null) {
+                return player;
+            }
+        } catch (Exception ignored) {
+        }
+
         try {
             @SuppressWarnings({"rawtypes", "unchecked"}) Ref refStoreID = new Ref(store, id);
             //noinspection unchecked

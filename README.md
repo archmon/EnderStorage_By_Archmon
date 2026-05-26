@@ -34,6 +34,10 @@ Please note that the Pocket Dimension Safe and Void Wrench are not part of the A
 it is just to allow other mods to see and interact with the inventory of the Void Chest. This was necessary because of the
 issues with the world-sided chest. (See Known Issues)
 
+## Version Update
+- 1.0.0: Initial release for Hytale version 2026.03.26-89796e57b (Pre-update 5)
+- 1.1.0: Update to Hytale version 0.5.0
+
 ## Known Issues
 - The Void Chest is meant to have the buttons on the top, but due to the way the blockstates work, that means I need 8092 model
   files for just showing all the different animation files of the Void Chest. Currently, I have 2 blockstates for the Void chest.
@@ -47,3 +51,4 @@ issues with the world-sided chest. (See Known Issues)
   was destroyed. I also tried making a bridge between the world-side and the database-side chests, but that also had issues
   like duplication of items. I would have loved to make it all work by making it all one inventory like the Minecraft mod
   does, but the hook for that was not available.
+- Cannot open the GUI for the Void Chest while flying. Fix, don't be flying.

@@ -1,5 +1,6 @@
 import java.nio.file.Files
 import java.nio.file.Paths
+import org.gradle.api.tasks.JavaExec
 
 plugins {
     `maven-publish`
@@ -7,7 +8,7 @@ plugins {
 }
 
 group = "me.archmon"
-version = "1.0.0"
+version = "1.1.0"
 val javaVersion = 25
 
 repositories {
@@ -20,6 +21,10 @@ repositories {
 dependencies {
     compileOnly(libs.jetbrains.annotations)
     compileOnly(libs.jspecify)
+    compileOnly(files(providers.gradleProperty("hytale_server_jar")
+        .orElse(providers.provider {
+            "${System.getProperty("user.home")}/.var/app/com.hypixel.HytaleLauncher/data/Hytale/install/release/package/game/latest/Server/HytaleServer.jar"
+        })))
     //standard SQLite JDBC driver
     implementation("org.xerial:sqlite-jdbc:3.45.3.0")
 }
@@ -151,6 +156,11 @@ afterEvaluate {
     val targetTask = tasks.findByName("runServer") ?: tasks.findByName("server")
 
     if (targetTask != null) {
+        if (targetTask is JavaExec) {
+            targetTask.mainClass.set("com.hypixel.hytale.Main")
+            targetTask.jvmArgs = targetTask.jvmArgs.orEmpty().filter { it.isNotBlank() }
+        }
+
         targetTask.dependsOn(ensureAssetPackLink)
         targetTask.finalizedBy(syncAssets)
         logger.lifecycle("✅ specific task '${targetTask.name}' hooked for auto-sync.")
