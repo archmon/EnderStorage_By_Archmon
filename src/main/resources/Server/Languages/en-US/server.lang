@@ -3,4 +3,4 @@ items.pocket_DimensionSafe.description=A safe containing a pocket dimension wher
 items.VoidChest.name=Void Chest
 items.VoidChest.description=A chest that matches the inventory of other chests with the same color code.
 items.VoidWrench.name=Void Wrench
-items.VoidWrench.description=A wrench that while held will allow you to open the dialog for changing the color of a Void Chest or changing from public to private networks and back.
+items.VoidWrench.description=A wrench that while held will allow you to open the dialog for changing the color of a Void Chest or changing from public to private networks and back with a crouch click.
